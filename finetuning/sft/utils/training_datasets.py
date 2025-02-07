@@ -2,13 +2,27 @@ import json
 import torch
 import random
 import os
+
+from jsonlines import jsonlines
 from torch.utils.data import IterableDataset, Dataset
 from typing import Dict, Optional, Sequence
 import transformers
 import logging
 import numpy as np
+import tqdm
+
 import utils
-logging.basicConfig(level=logging.DEBUG)  
+logging.basicConfig(level=logging.DEBUG)
+
+def read_jsonl_file(file_name, max_sentence=None):
+    data = []
+    with jsonlines.open(file_name, "r") as r:
+        for i, obj in tqdm.tqdm(enumerate(r)):
+            if max_sentence is not None and i >= max_sentence:
+                return data
+            data.append(obj)
+    return data
+
 class SupervisedDataset(Dataset):
     """Dataset for supervised fine-tuning."""
 
@@ -18,7 +32,7 @@ class SupervisedDataset(Dataset):
         if data_path.endswith(".npy"):
             self.input_ids = np.load(data_path, allow_pickle=True)
         else:
-            self.input_ids = utils.read_jsonl_file(data_path)
+            self.input_ids = read_jsonl_file(data_path)
         original_data_num = len(self.input_ids)
         logging.info("Completely Loading tokenized sentences...")
         def truncate(sentence):
