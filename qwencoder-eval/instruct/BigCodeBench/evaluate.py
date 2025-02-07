@@ -12,9 +12,6 @@ from typing import Any, Dict, List, Tuple
 from warnings import warn
 
 import numpy as np
-from termcolor import cprint
-from tqdm import tqdm
-
 from data import (
     get_bigcodebench,
     get_bigcodebench_hash,
@@ -28,13 +25,23 @@ from eval import (
     untrusted_check,
 )
 from gen.util import trusted_check
+from termcolor import cprint
+from tqdm import tqdm
 
 # 1st item: the status
 # 2nd item (optional): the detailed pass/fail boolean for each input
 Result = Tuple[str, List[bool]]
 
 
-def get_groundtruth(n_workers, problems, hashcode, check_gt_only, max_as_limit, max_data_limit, max_stack_limit):
+def get_groundtruth(
+    n_workers,
+    problems,
+    hashcode,
+    check_gt_only,
+    max_as_limit,
+    max_data_limit,
+    max_stack_limit,
+):
     cache_file = os.path.join(CACHE_DIR, f"{hashcode}.pkl")
     if os.path.exists(cache_file):
         if check_gt_only:
@@ -131,12 +138,20 @@ def evaluate(flags):
 
     if not flags.no_gt:
         expected_time = get_groundtruth(
-            n_workers, problems, dataset_hash, flags.check_gt_only, flags.max_as_limit, flags.max_data_limit, flags.max_stack_limit
+            n_workers,
+            problems,
+            dataset_hash,
+            flags.check_gt_only,
+            flags.max_as_limit,
+            flags.max_data_limit,
+            flags.max_stack_limit,
         )
     else:
         expected_time = {task_id: None for task_id in problems}
 
-    gt_pass_rate = np.mean([1 if v is not None else 0 for k, v in expected_time.items() if k in problems])
+    gt_pass_rate = np.mean(
+        [1 if v is not None else 0 for k, v in expected_time.items() if k in problems]
+    )
 
     if os.path.isfile(result_path):
         print(f"Load from previous results from {result_path}")
@@ -150,7 +165,10 @@ def evaluate(flags):
             if gt_pass_rate > 0.99:
                 cprint(f"Groundtruth pass rate: {gt_pass_rate:.3f}", "green")
             else:
-                cprint(f"Groundtruth pass rate: {gt_pass_rate:.3f}\nPlease be cautious!", "red")
+                cprint(
+                    f"Groundtruth pass rate: {gt_pass_rate:.3f}\nPlease be cautious!",
+                    "red",
+                )
             return
 
         results = {
@@ -170,11 +188,19 @@ def evaluate(flags):
                 task_id = sample["task_id"]
 
                 if task_id not in problems:
-                    warn(f"Task {task_id} is found in the samples but not found in the dataset")
+                    warn(
+                        f"Task {task_id} is found in the samples but not found in the dataset"
+                    )
                     continue
-                solution = sample["solution"] if "solution" in sample else problems[task_id]["complete_prompt"] + sample["completion"]
+                solution = (
+                    sample["solution"]
+                    if "solution" in sample
+                    else problems[task_id]["complete_prompt"] + sample["completion"]
+                )
                 if "sanitized-calibrated" in flags.samples:
-                    solution = problems[task_id]["code_prompt"] + "\n    pass\n" + solution
+                    solution = (
+                        problems[task_id]["code_prompt"] + "\n    pass\n" + solution
+                    )
                 remainings.add(sample["_identifier"])
                 args = (
                     completion_id[task_id],
@@ -238,7 +264,11 @@ def evaluate(flags):
 
     base_correct = np.array(base_correct)
 
-    pass_at_k = {f"pass@{k}": estimate_pass_at_k(total, base_correct, k).mean() for k in [1, 5, 10, 25, 100] if total.min() >= k}
+    pass_at_k = {
+        f"pass@{k}": estimate_pass_at_k(total, base_correct, k).mean()
+        for k in [1, 5, 10, 25, 100]
+        if total.min() >= k
+    }
 
     mode = "-calibrated" if "sanitized-calibrated" in flags.samples else ""
     extra = flags.subset.capitalize()
@@ -251,7 +281,9 @@ def evaluate(flags):
         if gt_pass_rate > 0.99:
             cprint(f"Groundtruth pass rate: {gt_pass_rate:.3f}", "green")
         else:
-            cprint(f"Groundtruth pass rate: {gt_pass_rate:.3f}\nPlease be cautious!", "red")
+            cprint(
+                f"Groundtruth pass rate: {gt_pass_rate:.3f}\nPlease be cautious!", "red"
+            )
 
     for k, v in pass_at_k.items():
         cprint(f"{k}:\t{v:.3f}", "green")
@@ -274,7 +306,9 @@ def evaluate(flags):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--split", required=True, type=str, choices=["complete", "instruct"])
+    parser.add_argument(
+        "--split", required=True, type=str, choices=["complete", "instruct"]
+    )
     parser.add_argument("--subset", default="full", type=str, choices=["full", "hard"])
     parser.add_argument("--samples", required=True, type=str)
     parser.add_argument("--parallel", default=None, type=int)
@@ -282,7 +316,9 @@ def main():
     parser.add_argument("--max-as-limit", default=128 * 1024, type=int)
     parser.add_argument("--max-data-limit", default=4 * 1024, type=int)
     parser.add_argument("--max-stack-limit", default=5, type=int)
-    parser.add_argument("--check-gt-only", action="store_true", help="Check the groundtruth")
+    parser.add_argument(
+        "--check-gt-only", action="store_true", help="Check the groundtruth"
+    )
     parser.add_argument("--no-gt", action="store_true", help="Check the groundtruth")
     args = parser.parse_args()
 

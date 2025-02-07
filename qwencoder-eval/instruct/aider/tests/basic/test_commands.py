@@ -8,7 +8,6 @@ from pathlib import Path
 from unittest import TestCase, mock
 
 import git
-
 from aider.coders import Coder
 from aider.commands import Commands, SwitchCoder
 from aider.dump import dump  # noqa: F401
@@ -134,7 +133,9 @@ class TestCommands(TestCase):
         # Check if the files have been added to the chat session
         self.assertIn(str(Path("test_dir/test_file1.txt").resolve()), coder.abs_fnames)
         self.assertIn(str(Path("test_dir/test_file2.txt").resolve()), coder.abs_fnames)
-        self.assertIn(str(Path("test_dir/another_dir/test_file.txt").resolve()), coder.abs_fnames)
+        self.assertIn(
+            str(Path("test_dir/another_dir/test_file.txt").resolve()), coder.abs_fnames
+        )
 
         commands.cmd_drop("test_dir/another_dir")
         self.assertIn(str(Path("test_dir/test_file1.txt").resolve()), coder.abs_fnames)
@@ -255,10 +256,16 @@ class TestCommands(TestCase):
     def test_cmd_add_from_subdir(self):
         repo = git.Repo.init()
         repo.config_writer().set_value("user", "name", "Test User").release()
-        repo.config_writer().set_value("user", "email", "testuser@example.com").release()
+        repo.config_writer().set_value(
+            "user", "email", "testuser@example.com"
+        ).release()
 
         # Create three empty files and add them to the git repository
-        filenames = ["one.py", Path("subdir") / "two.py", Path("anotherdir") / "three.py"]
+        filenames = [
+            "one.py",
+            Path("subdir") / "two.py",
+            Path("anotherdir") / "three.py",
+        ]
         for filename in filenames:
             file_path = Path(filename)
             file_path.parent.mkdir(parents=True, exist_ok=True)
@@ -425,7 +432,9 @@ class TestCommands(TestCase):
             io.tool_output = original_tool_output
 
             # Check if the output includes repository map information
-            repo_map_line = next((line for line in output_lines if "repository map" in line), None)
+            repo_map_line = next(
+                (line for line in output_lines if "repository map" in line), None
+            )
             self.assertIsNotNone(
                 repo_map_line, "Repository map information not found in the output"
             )
@@ -553,7 +562,9 @@ class TestCommands(TestCase):
 
         fname = "file.txt"
         encoding = "utf-16"
-        some_content_which_will_error_if_read_with_encoding_utf8 = "ÅÍÎÏ".encode(encoding)
+        some_content_which_will_error_if_read_with_encoding_utf8 = "ÅÍÎÏ".encode(
+            encoding
+        )
         with open(fname, "wb") as f:
             f.write(some_content_which_will_error_if_read_with_encoding_utf8)
 
@@ -589,7 +600,10 @@ class TestCommands(TestCase):
 
             # It's not in the repo, should not do anything
             self.assertFalse(
-                any(os.path.samefile(str(test_file.resolve()), fname) for fname in coder.abs_fnames)
+                any(
+                    os.path.samefile(str(test_file.resolve()), fname)
+                    for fname in coder.abs_fnames
+                )
             )
             self.assertTrue(
                 any(
@@ -607,7 +621,10 @@ class TestCommands(TestCase):
 
             # Verify it's now in abs_fnames and not in abs_read_only_fnames
             self.assertTrue(
-                any(os.path.samefile(str(test_file.resolve()), fname) for fname in coder.abs_fnames)
+                any(
+                    os.path.samefile(str(test_file.resolve()), fname)
+                    for fname in coder.abs_fnames
+                )
             )
             self.assertFalse(
                 any(
@@ -1041,7 +1058,9 @@ class TestCommands(TestCase):
             repo.git.commit("-m", "Add test_file.py")
 
             # Modify the file to make it dirty
-            file_path.write_text("def hello():\n    print('Hello, World!')\n\n# Dirty line\n")
+            file_path.write_text(
+                "def hello():\n    print('Hello, World!')\n\n# Dirty line\n"
+            )
 
             # Mock the linter.lint method
             with mock.patch.object(coder.linter, "lint") as mock_lint:

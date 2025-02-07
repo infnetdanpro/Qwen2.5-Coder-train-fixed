@@ -4,7 +4,7 @@ import json
 from abc import ABC, abstractmethod
 from warnings import warn
 
-from datasets import load_dataset, Dataset
+from datasets import Dataset, load_dataset
 
 
 class Task(ABC):

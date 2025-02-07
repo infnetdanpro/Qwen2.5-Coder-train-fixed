@@ -1,14 +1,15 @@
 import json
 
 try:
-    from anthropic import HUMAN_PROMPT, AI_PROMPT
+    from anthropic import AI_PROMPT, HUMAN_PROMPT
 except ImportError:
     HUMAN_PROMPT = None
     AI_PROMPT = None
 
-from lcb_runner_cq.lm_styles import LMStyle
-from lcb_runner_cq.benchmarks.code_generation import CodeGenerationProblem
 import os
+
+from lcb_runner_cq.benchmarks.code_generation import CodeGenerationProblem
+from lcb_runner_cq.lm_styles import LMStyle
 
 
 class PromptConstants:
@@ -16,7 +17,9 @@ class PromptConstants:
 
     SYSTEM_MESSAGE_DEEPSEEK = f"You are an AI programming assistant, utilizing the DeepSeek Coder model, developed by DeepSeek Company, and you answer questions related to computer science."
 
-    SYSTEM_MESSAGE_CODEQWEN = f"<|im_start|>system\nYou are a helpful assistant.<|im_end|>\n<|im_start|>user"
+    SYSTEM_MESSAGE_CODEQWEN = (
+        f"<|im_start|>system\nYou are a helpful assistant.<|im_end|>\n<|im_start|>user"
+    )
     SYSTEM_MESSAGE_QWEN_QWQ = f"<|im_start|>system\nYou are a helpful and harmless assistant. You are Qwen developed by Alibaba. You should think step-by-step.<|im_end|>\n<|im_start|>user"
 
     SYSTEM_MESSAGE_MAGIC = f"You are an exceptionally intelligent coding assistant that consistently delivers accurate and reliable responses to user instructions.\n\n@@ Instruction\n"
@@ -30,15 +33,15 @@ class PromptConstants:
 
     FORMATTING_MESSAGE_WITH_STARTER_CODE = "You will use the following starter code to write the solution to the problem and enclose your code within delimiters."
 
-    FORMATTING_WITHOUT_STARTER_CODE = (
-        "Read the inputs from stdin solve the problem and write the answer to stdout (do not directly test on the sample inputs). Enclose your code within delimiters as follows."
-    )
+    FORMATTING_WITHOUT_STARTER_CODE = "Read the inputs from stdin solve the problem and write the answer to stdout (do not directly test on the sample inputs). Enclose your code within delimiters as follows."
 
 
 def get_generic_question_template_answer(question: CodeGenerationProblem):
     prompt = f"### Question:\n{question.question_content}\n\n"
     if question.starter_code:
-        prompt += f"### Format: {PromptConstants.FORMATTING_MESSAGE_WITH_STARTER_CODE}\n"
+        prompt += (
+            f"### Format: {PromptConstants.FORMATTING_MESSAGE_WITH_STARTER_CODE}\n"
+        )
         prompt += f"```python\n{question.starter_code}\n```\n\n"
     else:
         prompt += f"### Format: {PromptConstants.FORMATTING_WITHOUT_STARTER_CODE}\n"
@@ -63,10 +66,14 @@ def get_deepseekcode_question_template_answer(question: CodeGenerationProblem):
     prompt = f"### Instruction: You will be given a question (problem specification) and will generate a correct Python program that matches the specification and passes all tests. You will NOT return anything except for the program.\n\n"
     prompt += f"Question:\n{question.question_content}\n\n"
     if question.starter_code:
-        prompt += f"### Instruction: {PromptConstants.FORMATTING_MESSAGE_WITH_STARTER_CODE}\n"
+        prompt += (
+            f"### Instruction: {PromptConstants.FORMATTING_MESSAGE_WITH_STARTER_CODE}\n"
+        )
         prompt += f"```python\n{question.starter_code}\n```\n\n"
     else:
-        prompt += f"### Instruction: {PromptConstants.FORMATTING_WITHOUT_STARTER_CODE}\n"
+        prompt += (
+            f"### Instruction: {PromptConstants.FORMATTING_WITHOUT_STARTER_CODE}\n"
+        )
         prompt += f"```python\n# YOUR CODE HERE\n```\n\n"
     prompt += f"### Response:\n\n"
     return prompt
@@ -140,10 +147,14 @@ def get_phind_question_template_answer(question: CodeGenerationProblem):
     return prompt
 
 
-with open(f"{os.path.dirname(os.path.abspath(__file__))}/few_shot_examples/generation/func.json") as f:
+with open(
+    f"{os.path.dirname(os.path.abspath(__file__))}/few_shot_examples/generation/func.json"
+) as f:
     func = json.load(f)
 
-with open(f"{os.path.dirname(os.path.abspath(__file__))}/few_shot_examples/generation/stdin.json") as f:
+with open(
+    f"{os.path.dirname(os.path.abspath(__file__))}/few_shot_examples/generation/stdin.json"
+) as f:
     stdin = json.load(f)
 
 
@@ -180,7 +191,9 @@ def get_base_model_question_template_answer(question: CodeGenerationProblem):
     return prompt
 
 
-def format_prompt_generation(question: CodeGenerationProblem, LanguageModelStyle: LMStyle) -> str:
+def format_prompt_generation(
+    question: CodeGenerationProblem, LanguageModelStyle: LMStyle
+) -> str:
     if LanguageModelStyle == LMStyle.OpenAIChat:
         chat_messages = [
             {
@@ -286,7 +299,9 @@ def format_prompt_generation(question: CodeGenerationProblem, LanguageModelStyle
         prompt = get_base_model_question_template_answer(question)
         return prompt
 
-    raise NotImplementedError(f"LanguageModelStyle {LanguageModelStyle} not implemented")
+    raise NotImplementedError(
+        f"LanguageModelStyle {LanguageModelStyle} not implemented"
+    )
 
 
 def test():

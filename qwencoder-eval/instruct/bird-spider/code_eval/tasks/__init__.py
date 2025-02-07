@@ -2,12 +2,12 @@ import inspect
 from pprint import pprint
 
 from . import (
-    spider_dev,
     bird_dev,
-    spider_dev_chat,
-    spider_dev_chat_cot,
     bird_dev_chat,
     bird_dev_chat_cot,
+    spider_dev,
+    spider_dev_chat,
+    spider_dev_chat_cot,
 )
 
 TASK_REGISTRY = {

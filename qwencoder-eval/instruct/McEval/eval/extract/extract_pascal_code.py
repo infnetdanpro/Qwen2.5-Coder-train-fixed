@@ -1,6 +1,6 @@
+import json
 import os
 import re
-import json
 
 
 def extract_pascal_code(

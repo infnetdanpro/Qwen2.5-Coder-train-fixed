@@ -2,12 +2,12 @@
 
 from pathlib import Path
 
-from .base import Task
-
 from prompts import (
-    make_direct_input_prompt,
     make_cot_input_prompt,
+    make_direct_input_prompt,
 )
+
+from .base import Task
 
 
 class InputPrediction(Task):
@@ -15,7 +15,9 @@ class InputPrediction(Task):
     answers, generation settings and evaluation methods.
     """
 
-    DATASET_PATH = str(Path(__file__).resolve().parent.parent.parent / "data/cruxeval.jsonl")
+    DATASET_PATH = str(
+        Path(__file__).resolve().parent.parent.parent / "data/cruxeval.jsonl"
+    )
     DATASET_NAME = None
 
     def __init__(self, cot=False):

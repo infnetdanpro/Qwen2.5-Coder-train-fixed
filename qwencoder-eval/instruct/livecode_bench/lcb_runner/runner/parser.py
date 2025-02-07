@@ -1,7 +1,7 @@
-import os
-import torch
 import argparse
+import os
 
+import torch
 from lcb_runner.utils.scenarios import Scenario
 
 
@@ -16,13 +16,13 @@ def get_args():
     parser.add_argument(
         "--model_path",
         type=str,
-        default = None,
+        default=None,
         help="Name of the model to use matching `lm_styles.py`",
     )
     parser.add_argument(
         "--output_name",
         type=str,
-        default = None,
+        default=None,
         help="Name of the model to use matching `lm_styles.py`",
     )
     parser.add_argument(
@@ -68,11 +68,13 @@ def get_args():
     parser.add_argument(
         "--output_dir",
         type=str,
-        default = None,
+        default=None,
         help="Number of processes to use for evaluation",
     )
 
-    parser.add_argument("--timeout", type=int, default=18, help="Timeout for evaluation")
+    parser.add_argument(
+        "--timeout", type=int, default=18, help="Timeout for evaluation"
+    )
     parser.add_argument(
         "--tensor_parallel_size",
         type=int,

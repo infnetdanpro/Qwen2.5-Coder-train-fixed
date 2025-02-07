@@ -1,5 +1,6 @@
-import fire
 import sys
+
+import fire
 
 from .data import HUMAN_EVAL
 from .evaluation import evaluate_functional_correctness
@@ -18,7 +19,9 @@ def entry_point(
     results to f"{sample_file}_results.jsonl.gz"
     """
     k = list(map(int, k.split(",")))
-    results = evaluate_functional_correctness(sample_file, k, n_workers, timeout, problem_file, is_mbpp)
+    results = evaluate_functional_correctness(
+        sample_file, k, n_workers, timeout, problem_file, is_mbpp
+    )
     print(results)
 
 

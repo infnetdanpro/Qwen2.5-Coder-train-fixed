@@ -37,7 +37,9 @@ def get_function_name(question: str, lang: str):
     func_lines = [x for x in question.strip().split("\n") if x.strip()]
 
     if lang.lower() == "python":
-        func_idx = [i for i in range(len(func_lines)) if func_lines[i].startswith("def ")][-1]
+        func_idx = [
+            i for i in range(len(func_lines)) if func_lines[i].startswith("def ")
+        ][-1]
         func_name = func_lines[func_idx].split("(")[0].strip()
         func_prefix = "\n".join(func_lines[:func_idx])
         return func_name, func_prefix
@@ -56,7 +58,9 @@ def extract_generation_code(example: str, lang_code: str, verbose: bool = False)
     indent = setting["indent"]
 
     try:
-        code_block: str = re.findall(f"```{lang.lower()}\n(.*?)```", output, re.DOTALL | re.IGNORECASE)[0]
+        code_block: str = re.findall(
+            f"```{lang.lower()}\n(.*?)```", output, re.DOTALL | re.IGNORECASE
+        )[0]
         if verbose:
             print(">>> Task: {}\n{}".format(task_id, code_block))
 
@@ -93,13 +97,23 @@ def extract_generation_code(example: str, lang_code: str, verbose: bool = False)
         example["generation"] = generation
 
     except Exception as ex:
-        print("Failed to extract code block with error `{}`:\n>>> Task: {}\n>>> Output:\n{}".format(ex, task_id, output))
+        print(
+            "Failed to extract code block with error `{}`:\n>>> Task: {}\n>>> Output:\n{}".format(
+                ex, task_id, output
+            )
+        )
         example["generation"] = example["prompt"] + "\n" + output
 
     return example
 
 
-def cleanup_code(code: str, language_type: str = None, dataset: str = None, issft: bool = False, stop_words=[]):
+def cleanup_code(
+    code: str,
+    language_type: str = None,
+    dataset: str = None,
+    issft: bool = False,
+    stop_words=[],
+):
     """
     Cleans up the generated code.
     """
@@ -110,7 +124,17 @@ def cleanup_code(code: str, language_type: str = None, dataset: str = None, issf
         stop_words = ["\ndef", "\nclass", "\nif", "\n#", "\nprint"]
         code = _truncate_code_at_stopwords(code, stop_words)
     elif language_type.lower() == "ts":
-        code = _truncate_code_at_stopwords(code, stop_words + ["\nexport", "\nimport", "\nexport default", "\nimport default", "\nconsole.log"])
+        code = _truncate_code_at_stopwords(
+            code,
+            stop_words
+            + [
+                "\nexport",
+                "\nimport",
+                "\nexport default",
+                "\nimport default",
+                "\nconsole.log",
+            ],
+        )
     # elif language_type.lower() == "java":
     #     code = _truncate_code_for_java(code, stop_words)
     else:

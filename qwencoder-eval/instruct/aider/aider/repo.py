@@ -4,7 +4,6 @@ from pathlib import Path, PurePosixPath
 
 import git
 import pathspec
-
 from aider import prompts, utils
 from aider.sendchat import simple_send_with_retries
 

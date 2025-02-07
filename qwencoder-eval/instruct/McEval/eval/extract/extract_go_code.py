@@ -1,6 +1,6 @@
+import json
 import os
 import re
-import json
 
 # from humanevalpack import create_all_tasks, create_task
 # create_all_tasks()
@@ -31,7 +31,11 @@ def extract_go_code(text, item):
         rf"```(?:[Gg]o)?.*?(func\s+{entry_point}.*?)```", text, flags=re.DOTALL
     )
     if code_block is None:
-        code_block = re.search(rf"(func\s+{entry_point}.*{dot}|{signature_escaped}.*{dot})", text, flags=re.DOTALL)
+        code_block = re.search(
+            rf"(func\s+{entry_point}.*{dot}|{signature_escaped}.*{dot})",
+            text,
+            flags=re.DOTALL,
+        )
     if code_block is None:
         code_block = re.search(rf"```(?:[Gg]o)?(.*?)```", text, flags=re.DOTALL)
     if code_block is None:
@@ -48,7 +52,6 @@ def extract_go_code(text, item):
     if "func Test" in code or "func test" in code:
         test_regex = re.compile(r"func\s+[Tt]est.*?\(.*?\)\s*\{.*\}", re.DOTALL)
         code = test_regex.sub("", code)
-
 
     prompt = item["prompt"].split("\n")
     prompt = "\n".join(prompt[:-1])

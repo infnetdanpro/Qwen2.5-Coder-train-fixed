@@ -1,6 +1,5 @@
 from lcb_runner_cq.lm_styles import LMStyle
 
-
 # def extract_code(model_output: str, lmstyle: LMStyle):
 #     outputlines = model_output.split("\n")
 #     if lmstyle == LMStyle.CodeLLaMaInstruct:
@@ -40,7 +39,11 @@ def extract_test_output_code(model_output: str, lmstyle: LMStyle = None):
         indexlines = [i for i, line in enumerate(outputlines) if "PYTHON]" in line]
     else:
         # first try to extract ```python if not then try ```
-        indexlines = [i for i, line in enumerate(outputlines) if "```python" in line or "```Python" in line]
+        indexlines = [
+            i
+            for i, line in enumerate(outputlines)
+            if "```python" in line or "```Python" in line
+        ]
         if indexlines:
             start_index = indexlines[0]
         else:

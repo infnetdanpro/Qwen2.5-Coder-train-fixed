@@ -1,12 +1,13 @@
 # Copyright (c) Meta Platforms, Inc. and affiliates.
 
-from tabulate import tabulate
+import glob
 import json
 import os
-import glob
+
+from tabulate import tabulate
 
 current_dir = os.path.join(os.getcwd(), "evaluation_results")
-json_files = glob.glob(os.path.join(current_dir, '*.json'))
+json_files = glob.glob(os.path.join(current_dir, "*.json"))
 
 accs = {}
 models = []
@@ -31,15 +32,21 @@ for i in ["input", "output"]:
     for m in models:
         model = m
         # model = m.split(" ")[0].split("/")[1]
-        try: pass_at_1 = accs[(i, m, 0.2)]
-        except: pass_at_1 = "n/a"
-        try: pass_at_5 = accs[(i, m, 0.8)]
-        except: pass_at_5 = "n/a"
-        try: data.append([model, pass_at_1, pass_at_5])
-        except: pass
-    
+        try:
+            pass_at_1 = accs[(i, m, 0.2)]
+        except:
+            pass_at_1 = "n/a"
+        try:
+            pass_at_5 = accs[(i, m, 0.8)]
+        except:
+            pass_at_5 = "n/a"
+        try:
+            data.append([model, pass_at_1, pass_at_5])
+        except:
+            pass
+
     headers = ["Model", "Pass@1", "Pass@5"]
-    data.sort(key = lambda x:x[1])
+    data.sort(key=lambda x: x[1])
     table = tabulate(data, headers=headers, tablefmt="pipe")
     print(f"********* CRUXEval-{i.capitalize()} *********\n")
     print(table)

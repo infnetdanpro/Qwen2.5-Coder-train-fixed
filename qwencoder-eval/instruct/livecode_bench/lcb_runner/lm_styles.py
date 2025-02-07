@@ -6,7 +6,7 @@ from enum import Enum
 class LMStyle(Enum):
     CodeQwenBase = "CodeQwenBase"
     CodeQwenChat = "CodeQwenChat"
-    
+
     OpenAIChat = "OpenAIChat"
     Anthropic = "Anthropic"
     AnthropicMessage = "AnthropicMessage"

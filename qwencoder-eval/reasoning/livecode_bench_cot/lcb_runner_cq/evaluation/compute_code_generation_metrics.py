@@ -8,12 +8,10 @@ import json
 import multiprocessing
 from concurrent.futures import ProcessPoolExecutor, as_completed
 
-
 import numpy as np
-from tqdm import tqdm
-
-from lcb_runner_cq.evaluation.testing_util import run_test
 from lcb_runner_cq.evaluation.pass_k_utils import compute_metrics_from_results
+from lcb_runner_cq.evaluation.testing_util import run_test
+from tqdm import tqdm
 
 
 def check_correctness(sample, generation, timeout, debug=True):
@@ -26,10 +24,14 @@ def check_correctness(sample, generation, timeout, debug=True):
 
     manager = multiprocessing.Manager()
     result = manager.list()
-    p = multiprocessing.Process(target=_temp_run, args=(sample, generation, debug, result))
+    p = multiprocessing.Process(
+        target=_temp_run, args=(sample, generation, debug, result)
+    )
     p.start()
 
-    p_timeout = min(60, (timeout + 1) * len(json.loads(sample["input_output"])["inputs"]) + 5)
+    p_timeout = min(
+        60, (timeout + 1) * len(json.loads(sample["input_output"])["inputs"]) + 5
+    )
     p.join(timeout=p_timeout)
 
     if p.is_alive():
@@ -106,11 +108,19 @@ def evaluate_generations(
 
     # generations are code generations in the same order of the dataset
 
-    inputs = [[(generations_list[index], samples_list[index], debug, timeout), index] for index in range(len(generations_list))]
+    inputs = [
+        [(generations_list[index], samples_list[index], debug, timeout), index]
+        for index in range(len(generations_list))
+    ]
 
     with tqdm(total=len(inputs)) as pbar:
-        with ProcessPoolExecutor(max_workers=1 if debug else num_process_evaluate) as executor:
-            futures = {executor.submit(evaluate_generations_by_problem, arg): index for arg, index in inputs}
+        with ProcessPoolExecutor(
+            max_workers=1 if debug else num_process_evaluate
+        ) as executor:
+            futures = {
+                executor.submit(evaluate_generations_by_problem, arg): index
+                for arg, index in inputs
+            }
 
             results = {}
             for future in as_completed(futures):
@@ -118,7 +128,9 @@ def evaluate_generations(
                 results[index] = future.result()
                 pbar.update(1)
 
-    assert len(results) == len(inputs), f"results = {len(results)} inputs = {len(inputs)} {results=}"
+    assert len(results) == len(
+        inputs
+    ), f"results = {len(results)} inputs = {len(inputs)} {results=}"
     # results = {i: r for r, (_, i) in zip(results, inputs)}
 
     return results

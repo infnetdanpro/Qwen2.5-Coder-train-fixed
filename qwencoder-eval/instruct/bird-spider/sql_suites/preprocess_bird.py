@@ -1,10 +1,16 @@
 import json
 import shutil
-from tqdm import tqdm
-
-from utils import save_json, save_lines, load_json, load_lines, join_seperator, extract_create_table_prompt
 from pathlib import Path
 
+from tqdm import tqdm
+from utils import (
+    extract_create_table_prompt,
+    join_seperator,
+    load_json,
+    load_lines,
+    save_json,
+    save_lines,
+)
 
 SCHEMA_EXAMPLE_ROWS = 0
 
@@ -31,7 +37,9 @@ def process_data(questions, db_root, with_knowledge):
         item = {
             "id": len(processed),
             "db_id": e["db_id"],
-            "instruction": create_codex_prompt(e, db_root, with_knowledge=with_knowledge),
+            "instruction": create_codex_prompt(
+                e, db_root, with_knowledge=with_knowledge
+            ),
             "output": e["SQL"],
         }
         processed.append(item)
@@ -62,13 +70,19 @@ if __name__ == "__main__":
     bird_dev_questions = load_json(bird_raw_folder / "dev.json")
     bird_databases = bird_raw_folder / "dev_databases"
 
-    bird_dev_questions_processed = process_data(bird_dev_questions, bird_databases, with_knowledge=True)
+    bird_dev_questions_processed = process_data(
+        bird_dev_questions, bird_databases, with_knowledge=True
+    )
     save_json(bird_dev_questions_processed, output_root / "bird-dev.json")
 
-    bird_dev_questions_nokg_processed = process_data(bird_dev_questions, bird_databases, with_knowledge=False)
+    bird_dev_questions_nokg_processed = process_data(
+        bird_dev_questions, bird_databases, with_knowledge=False
+    )
     save_json(bird_dev_questions_nokg_processed, output_root / "bird-dev-nokg.json")
 
-    bird_dev_golden = [join_seperator(e["output"], e["db_id"]) for e in bird_dev_questions_processed]
+    bird_dev_golden = [
+        join_seperator(e["output"], e["db_id"]) for e in bird_dev_questions_processed
+    ]
     save_lines(bird_dev_golden, output_root / "golden.sql")
 
     bird_used_databases = output_root / "database"

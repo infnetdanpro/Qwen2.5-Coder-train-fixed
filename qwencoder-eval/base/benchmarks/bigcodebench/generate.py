@@ -1,12 +1,15 @@
-import os
-import json
 import argparse
-
-from model import DecoderBase, make_model
-from data import get_bigcodebench, write_jsonl
 import gc
+import json
+import os
+
 import torch
-from vllm.distributed.parallel_state import destroy_distributed_environment, destroy_model_parallel
+from data import get_bigcodebench, write_jsonl
+from model import DecoderBase, make_model
+from vllm.distributed.parallel_state import (
+    destroy_distributed_environment,
+    destroy_model_parallel,
+)
 
 
 def codegen(
@@ -24,7 +27,9 @@ def codegen(
     dataset = get_bigcodebench(subset=subset)
 
     if model.is_direct_completion() and split == "instruct":
-        raise Exception("Base model does not support direct completion for instruct tasks")
+        raise Exception(
+            "Base model does not support direct completion for instruct tasks"
+        )
 
     # create save_path if it doesn't exist, e.g., a/b.jsonl
     dirname = os.path.dirname(save_path)
@@ -44,7 +49,9 @@ def codegen(
     assert outputs, "No outputs from model!"
 
     samples = []
-    for task_id, complete_prompt, completion in zip(task_ids, complete_prompts, outputs):
+    for task_id, complete_prompt, completion in zip(
+        task_ids, complete_prompts, outputs
+    ):
         if model.is_direct_completion():
             generated = complete_prompt + completion
         else:
@@ -59,7 +66,9 @@ def codegen(
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--model", required=True, type=str)
-    parser.add_argument("--split", required=True, type=str, choices=["complete", "instruct"])
+    parser.add_argument(
+        "--split", required=True, type=str, choices=["complete", "instruct"]
+    )
     parser.add_argument("--subset", default="full", type=str, choices=["full", "hard"])
     parser.add_argument("--save_path", default=None, type=str)
     parser.add_argument("--bs", default=1, type=int)
@@ -70,7 +79,12 @@ def main():
     parser.add_argument("--resume", action="store_true")
     parser.add_argument("--chat_mode", action="store_true", default=False)
     parser.add_argument("--id_range", nargs=2, type=int)
-    parser.add_argument("--backend", default="vllm", type=str, choices=["vllm", "hf", "openai", "mistral", "anthropic", "google"])
+    parser.add_argument(
+        "--backend",
+        default="vllm",
+        type=str,
+        choices=["vllm", "hf", "openai", "mistral", "anthropic", "google"],
+    )
     parser.add_argument("--base_url", default=None, type=str)
     parser.add_argument("--tp", default=1, type=int)
     parser.add_argument("--tokenizer_legacy", action="store_true")
@@ -105,7 +119,10 @@ def main():
 
     extra = "-" + args.subset if args.subset != "full" else ""
     if not args.save_path:
-        save_path = args.model.replace("/", "--") + f"--bigcodebench{extra}-{args.split}--{args.backend}-{args.temperature}-{args.n_samples}.jsonl"
+        save_path = (
+            args.model.replace("/", "--")
+            + f"--bigcodebench{extra}-{args.split}--{args.backend}-{args.temperature}-{args.n_samples}.jsonl"
+        )
     else:
         save_path = args.save_path
 

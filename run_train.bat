@@ -1,1 +1,1 @@
-venv\Scripts\python .\finetuning\sft\train.py --model_name_or_path=models/Qwen2.5-Coder-1.5B --output_dir=finetuned/ --data_path=data_path/tokenized_code_base.jsonl
+venv\Scripts\python .\finetuning\sft\train.py --model_name_or_path=models/Qwen2.5-Coder-0.5B --output_dir=finetuned/ --data_path=data_path/tokenized_code_base.jsonl

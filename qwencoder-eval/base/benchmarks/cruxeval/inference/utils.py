@@ -79,12 +79,17 @@ def complete_code(
     )
 
     generated_texts = [output.outputs[0].text for output in outputs]
-    combined_texts = [prompt + generated_text for prompt, generated_text in zip(prompts, generated_texts)]
+    combined_texts = [
+        prompt + generated_text
+        for prompt, generated_text in zip(prompts, generated_texts)
+    ]
 
     code_gens, code_gens_raw = defaultdict(list), defaultdict(list)
     for task_id, text in zip(task_ids, combined_texts):
         if postprocess:
-            text_processed = task.postprocess_generation(text, int(task_id.split("_")[-1]))
+            text_processed = task.postprocess_generation(
+                text, int(task_id.split("_")[-1])
+            )
         code_gens[task_id].append(text_processed)
         code_gens_raw[task_id].append(text)
 

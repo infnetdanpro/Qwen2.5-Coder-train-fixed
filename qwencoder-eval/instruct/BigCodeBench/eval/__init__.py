@@ -27,20 +27,20 @@ import sys
 import time
 import types
 import unittest
-from multiprocessing import Array, Value, Manager
+from multiprocessing import Array, Manager, Value
 from typing import Any, Dict, List, Tuple, Union
 
 import numpy as np
-
 from eval._special_oracle import (
-    _poly,)
+    _poly,
+)
 from eval.utils import (
+    TIMEOUT_LIMIT,
     create_tempdir,
     reliability_guard,
+    safe_environment,
     swallow_io,
     time_limit,
-    safe_environment,
-    TIMEOUT_LIMIT,
 )
 
 
@@ -77,7 +77,9 @@ def estimate_pass_at_k(
         assert len(num_samples) == len(num_correct)
         num_samples_it = iter(num_samples)
 
-    return np.array([estimator(int(n), int(c), k) for n, c in zip(num_samples_it, num_correct)])
+    return np.array(
+        [estimator(int(n), int(c), k) for n, c in zip(num_samples_it, num_correct)]
+    )
 
 
 PASS = "pass"
@@ -104,21 +106,21 @@ def is_floats(x) -> bool:
 
 
 def unsafe_execute(
-        entry_point: str,
-        code: str,
-        test_code: str,
-        timeout: float,
-        max_as_limit: float,
-        max_data_limit: float,
-        max_stack_limit: float,
-        stat,  # Value
-        details,  # Array
+    entry_point: str,
+    code: str,
+    test_code: str,
+    timeout: float,
+    max_as_limit: float,
+    max_data_limit: float,
+    max_stack_limit: float,
+    stat,  # Value
+    details,  # Array
 ):
     with safe_environment(), create_tempdir():
         # These system calls are needed when cleaning up tempdir.
+        import builtins
         import os
         import shutil
-        import builtins
 
         rmtree = shutil.rmtree
         rmdir = os.rmdir
@@ -128,23 +130,27 @@ def unsafe_execute(
         module_name = "__test__"
         new_module = types.ModuleType(module_name)
         # Set necessary attributes for the module
-        new_module.__dict__.update({
-            '__builtins__': builtins,
-            '__file__': f"{module_name}.py",
-            '__package__': None,
-            '__doc__': None,
-            'sys': sys,
-            'os': os,
-            'environ': os.environ,
-        })
+        new_module.__dict__.update(
+            {
+                "__builtins__": builtins,
+                "__file__": f"{module_name}.py",
+                "__package__": None,
+                "__doc__": None,
+                "sys": sys,
+                "os": os,
+                "environ": os.environ,
+            }
+        )
 
         try:
             full_code = code + "\n" + test_code
 
             with swallow_io():
-                exec(compile(full_code, f"{module_name}.py", 'exec'), new_module.__dict__)
+                exec(
+                    compile(full_code, f"{module_name}.py", "exec"), new_module.__dict__
+                )
                 sys.modules[module_name] = new_module
-                TestCases = getattr(new_module, 'TestCases')
+                TestCases = getattr(new_module, "TestCases")
                 loader = unittest.TestLoader()
                 suite = loader.loadTestsFromTestCase(TestCases)
                 test_result = unittest.TestResult()
@@ -165,9 +171,20 @@ def unsafe_execute(
         os.chdir = chdir
 
 
-def untrusted_check(code: str, test_code: str, entry_point: str, max_as_limit: float, max_data_limit: float, max_stack_limit: float, min_time_limit: float = 10, gt_time_limit: float = 60) -> Tuple[str, np.ndarray]:
+def untrusted_check(
+    code: str,
+    test_code: str,
+    entry_point: str,
+    max_as_limit: float,
+    max_data_limit: float,
+    max_stack_limit: float,
+    min_time_limit: float = 10,
+    gt_time_limit: float = 60,
+) -> Tuple[str, np.ndarray]:
     time_limit = max(min_time_limit, gt_time_limit)
-    timeout = max(os.getenv("BIGCODEBENCH_TIMEOUT_PER_TASK", TIMEOUT_LIMIT), time_limit) + 1
+    timeout = (
+        max(os.getenv("BIGCODEBENCH_TIMEOUT_PER_TASK", TIMEOUT_LIMIT), time_limit) + 1
+    )
     # shared memory objects
     stat = Value("i", _UNKNOWN)
     manager = Manager()

@@ -1,7 +1,8 @@
-import numpy as np
-import jsonlines
 import os
 import sys
+
+import jsonlines
+import numpy as np
 
 eval_plus_path = os.path.dirname(os.path.abspath(__file__)) + "/evalplus/"
 sys.path = [eval_plus_path] + sys.path
@@ -21,11 +22,13 @@ MBPP_OUTPUT_NOT_NONE_TASKS = ["check_str", "text_match_three", "text_starta_endb
 
 
 def convert_file(root_dir):
-    import jsonlines
-    from copy import deepcopy
-    import sys
-    import tqdm
     import re
+    import sys
+    from copy import deepcopy
+
+    import jsonlines
+    import tqdm
+
     sys.set_int_max_str_digits(10000000)
 
     def write_jsonl_file(objs, target_path):
@@ -55,7 +58,9 @@ Can you complete the following Python function?
 ```{}
 {}
 ```
-    """.strip().format(language.lower(), question.strip())
+    """.strip().format(
+            language.lower(), question.strip()
+        )
 
     def create_high_accuracy_function(code, entry_point):
         high_accuracy = """
@@ -115,13 +120,19 @@ def decimal_to_float(func):
         code = "\n".join(new_code)
         return code
 
-    def trusted_exec(code, inputs, entry_point, record_time=False, output_not_none=False):
+    def trusted_exec(
+        code, inputs, entry_point, record_time=False, output_not_none=False
+    ):
         exec_globals = {}
         # if entry_point not in ["triangle_area", "angle_complex", "volume_sphere"]: # avoid special case (a ** b)
         #     code = create_high_accuracy_function(code, entry_point)
-        if "**" not in code and entry_point not in ["triangle_area", "angle_complex", "volume_sphere"]:
+        if "**" not in code and entry_point not in [
+            "triangle_area",
+            "angle_complex",
+            "volume_sphere",
+        ]:
             code = create_high_accuracy_function(code, entry_point)
-        #print(code)
+        # print(code)
         exec(code, exec_globals)
         fn = exec_globals[entry_point]
 
@@ -152,48 +163,108 @@ def decimal_to_float(func):
             if test_set == "base_input":
                 inputs = obj["base_input"]
             else:
-                inputs = obj["base_input"] + obj["plus_input"] if not isinstance(obj["plus_input"], dict) else obj["base_input"]
-            #outputs = trusted_exec(code = obj["prompt"] + obj["canonical_solution"], inputs = obj["base_input"], entry_point = obj["entry_point"])
-            #tests = create_check_function(test_cases = inputs, entry_point=obj["entry_point"], outputs = outputs)
-            outputs = trusted_exec(code=obj["prompt"] + obj["canonical_solution"], inputs=[obj["base_input"][0]], entry_point=obj["entry_point"])
+                inputs = (
+                    obj["base_input"] + obj["plus_input"]
+                    if not isinstance(obj["plus_input"], dict)
+                    else obj["base_input"]
+                )
+            # outputs = trusted_exec(code = obj["prompt"] + obj["canonical_solution"], inputs = obj["base_input"], entry_point = obj["entry_point"])
+            # tests = create_check_function(test_cases = inputs, entry_point=obj["entry_point"], outputs = outputs)
+            outputs = trusted_exec(
+                code=obj["prompt"] + obj["canonical_solution"],
+                inputs=[obj["base_input"][0]],
+                entry_point=obj["entry_point"],
+            )
             atol = obj["atol"]
             if atol == 0:
                 atol = 1e-6  # enforce atol for float comparison
-                #```python
-            if obj["entry_point"] == "find_zero":  #humaneval
-                tests = create_dynamic_check_function_find_zero(test_cases=inputs, entry_point=obj["entry_point"], prompt=obj["prompt"], correct_solution=obj["canonical_solution"], atol=atol)
+                # ```python
+            if obj["entry_point"] == "find_zero":  # humaneval
+                tests = create_dynamic_check_function_find_zero(
+                    test_cases=inputs,
+                    entry_point=obj["entry_point"],
+                    prompt=obj["prompt"],
+                    correct_solution=obj["canonical_solution"],
+                    atol=atol,
+                )
             elif obj["entry_point"] in MBPP_OUTPUT_NOT_NONE_TASKS:
-                tests = create_dynamic_check_function(test_cases=inputs, entry_point=obj["entry_point"], prompt=obj["prompt"], correct_solution=obj["canonical_solution"], check_style="not_none", atol=atol)
+                tests = create_dynamic_check_function(
+                    test_cases=inputs,
+                    entry_point=obj["entry_point"],
+                    prompt=obj["prompt"],
+                    correct_solution=obj["canonical_solution"],
+                    check_style="not_none",
+                    atol=atol,
+                )
             elif obj["entry_point"] in MBPP_OUTPUT_SET_EQ_TASKS:  # mbpp
-                tests = create_dynamic_check_function(test_cases=inputs, entry_point=obj["entry_point"], prompt=obj["prompt"], correct_solution=obj["canonical_solution"], check_style="set", atol=atol)
+                tests = create_dynamic_check_function(
+                    test_cases=inputs,
+                    entry_point=obj["entry_point"],
+                    prompt=obj["prompt"],
+                    correct_solution=obj["canonical_solution"],
+                    check_style="set",
+                    atol=atol,
+                )
             elif obj["entry_point"] == "are_equivalent":  # mbpp
-                tests = create_dynamic_check_function_are_equivalent(test_cases=inputs, entry_point=obj["entry_point"], prompt=obj["prompt"], correct_solution=obj["canonical_solution"], atol=atol)
+                tests = create_dynamic_check_function_are_equivalent(
+                    test_cases=inputs,
+                    entry_point=obj["entry_point"],
+                    prompt=obj["prompt"],
+                    correct_solution=obj["canonical_solution"],
+                    atol=atol,
+                )
             elif obj["entry_point"] == "sum_div":  # mbpp
-                tests = create_dynamic_check_function_sum_div(test_cases=inputs, entry_point=obj["entry_point"], prompt=obj["prompt"], correct_solution=obj["canonical_solution"], atol=atol)
-            elif isinstance(outputs[0], float) or (isinstance(outputs[0], list) and len(outputs[0]) > 0 and isinstance(outputs[0][0], float)):
-                tests = create_dynamic_check_function(test_cases=inputs, entry_point=obj["entry_point"], prompt=obj["prompt"], correct_solution=obj["canonical_solution"], check_style="np.allcose", atol=atol)
+                tests = create_dynamic_check_function_sum_div(
+                    test_cases=inputs,
+                    entry_point=obj["entry_point"],
+                    prompt=obj["prompt"],
+                    correct_solution=obj["canonical_solution"],
+                    atol=atol,
+                )
+            elif isinstance(outputs[0], float) or (
+                isinstance(outputs[0], list)
+                and len(outputs[0]) > 0
+                and isinstance(outputs[0][0], float)
+            ):
+                tests = create_dynamic_check_function(
+                    test_cases=inputs,
+                    entry_point=obj["entry_point"],
+                    prompt=obj["prompt"],
+                    correct_solution=obj["canonical_solution"],
+                    check_style="np.allcose",
+                    atol=atol,
+                )
             else:
-                tests = create_dynamic_check_function(test_cases=inputs, entry_point=obj["entry_point"], prompt=obj["prompt"], correct_solution=obj["canonical_solution"], check_style="==", atol=atol)
-            data.append({
-                "prompt": prompt,
-                "test": tests,
-                "entry_point": obj["entry_point"],
-                "tags": f"coding,en,python,core",
-                "task": task_name,
-                "source": f"evalplus",
-                "eval_args": {
-                    "greedy": True,
-                    #"seed": 1234,
-                    "out_seq_length": 1024,
-                    "repetition_penalty": 1.0,
-                    "temperature": 1.0,
-                    "top_k": -1,
-                    "top_p": 0.95,
-                    "presence_penalty": 0,
-                    "system_str": "You are an intelligent programming assistant to produce Python algorithmic solutions",
-                },
-                "extra_response_prefix": "```python\n"
-            })
+                tests = create_dynamic_check_function(
+                    test_cases=inputs,
+                    entry_point=obj["entry_point"],
+                    prompt=obj["prompt"],
+                    correct_solution=obj["canonical_solution"],
+                    check_style="==",
+                    atol=atol,
+                )
+            data.append(
+                {
+                    "prompt": prompt,
+                    "test": tests,
+                    "entry_point": obj["entry_point"],
+                    "tags": f"coding,en,python,core",
+                    "task": task_name,
+                    "source": f"evalplus",
+                    "eval_args": {
+                        "greedy": True,
+                        # "seed": 1234,
+                        "out_seq_length": 1024,
+                        "repetition_penalty": 1.0,
+                        "temperature": 1.0,
+                        "top_k": -1,
+                        "top_p": 0.95,
+                        "presence_penalty": 0,
+                        "system_str": "You are an intelligent programming assistant to produce Python algorithmic solutions",
+                    },
+                    "extra_response_prefix": "```python\n",
+                }
+            )
         return data
 
     def create_check_function(test_cases, entry_point, outputs):
@@ -202,50 +273,87 @@ def decimal_to_float(func):
             for i in range(len(case)):
                 if isinstance(case[i], str) and "\n" in case[i]:
                     case[i] = case[i].replace("\n", "\\n")
-            input_params = ", ".join([str(c) if not isinstance(c, str) else f"'{c}'" for c in case])
+            input_params = ", ".join(
+                [str(c) if not isinstance(c, str) else f"'{c}'" for c in case]
+            )
             output = str(output) if not isinstance(output, str) else f"'{output}'"
-            single_test_case_str = f"\tassert {entry_point}({input_params}) == {output}\n"
+            single_test_case_str = (
+                f"\tassert {entry_point}({input_params}) == {output}\n"
+            )
             test_cases_str += single_test_case_str
         test_cases_str += "check()"
         return test_cases_str
 
-    def create_dynamic_check_function_are_equivalent(test_cases, entry_point, prompt, correct_solution, check_style="np.allclose", atol=0):
+    def create_dynamic_check_function_are_equivalent(
+        test_cases,
+        entry_point,
+        prompt,
+        correct_solution,
+        check_style="np.allclose",
+        atol=0,
+    ):
         test_cases_str = "import numpy as np\n" + prompt + correct_solution
-        test_cases_str = test_cases_str.replace(f"def {entry_point}(", f"def {entry_point}_ground_truth(")
+        test_cases_str = test_cases_str.replace(
+            f"def {entry_point}(", f"def {entry_point}_ground_truth("
+        )
         test_cases_str += "def check():\n"
         for case in test_cases:
             for i in range(len(case)):
                 if isinstance(case[i], str) and "\n" in case[i]:
                     case[i] = case[i].replace("\n", "\\n")
-            input_params = ", ".join([str(c) if not isinstance(c, str) else f"'{c}'" for c in case])
+            input_params = ", ".join(
+                [str(c) if not isinstance(c, str) else f"'{c}'" for c in case]
+            )
             single_test_case_str = f"\tassert {entry_point}({input_params}) == {entry_point}_ground_truth({input_params}) or {entry_point}({input_params}) == 0\n"
             test_cases_str += single_test_case_str
         test_cases_str += "check()"
         return test_cases_str
 
-    def create_dynamic_check_function_sum_div(test_cases, entry_point, prompt, correct_solution, check_style="np.allclose", atol=0):
+    def create_dynamic_check_function_sum_div(
+        test_cases,
+        entry_point,
+        prompt,
+        correct_solution,
+        check_style="np.allclose",
+        atol=0,
+    ):
         test_cases_str = "import numpy as np\n" + prompt + correct_solution
-        test_cases_str = test_cases_str.replace(f"def {entry_point}(", f"def {entry_point}_ground_truth(")
+        test_cases_str = test_cases_str.replace(
+            f"def {entry_point}(", f"def {entry_point}_ground_truth("
+        )
         test_cases_str += "def check():\n"
         for case in test_cases:
             for i in range(len(case)):
                 if isinstance(case[i], str) and "\n" in case[i]:
                     case[i] = case[i].replace("\n", "\\n")
-            input_params = ", ".join([str(c) if not isinstance(c, str) else f"'{c}'" for c in case])
+            input_params = ", ".join(
+                [str(c) if not isinstance(c, str) else f"'{c}'" for c in case]
+            )
             single_test_case_str = f"\tassert {entry_point}({input_params}) == {entry_point}_ground_truth({input_params}) or {entry_point}({input_params}) == 0\n"
             test_cases_str += single_test_case_str
         test_cases_str += "check()"
         return test_cases_str
 
-    def create_dynamic_check_function(test_cases, entry_point, prompt, correct_solution, check_style="np.allclose", atol=0):
+    def create_dynamic_check_function(
+        test_cases,
+        entry_point,
+        prompt,
+        correct_solution,
+        check_style="np.allclose",
+        atol=0,
+    ):
         test_cases_str = "import numpy as np\n" + prompt + correct_solution
-        test_cases_str = test_cases_str.replace(f"def {entry_point}(", f"def {entry_point}_ground_truth(")
+        test_cases_str = test_cases_str.replace(
+            f"def {entry_point}(", f"def {entry_point}_ground_truth("
+        )
         test_cases_str += "def check():\n"
         for case in test_cases:
             for i in range(len(case)):
                 if isinstance(case[i], str) and "\n" in case[i]:
                     case[i] = case[i].replace("\n", "\\n")
-            input_params = ", ".join([str(c) if not isinstance(c, str) else f"'{c}'" for c in case])
+            input_params = ", ".join(
+                [str(c) if not isinstance(c, str) else f"'{c}'" for c in case]
+            )
             if check_style == "np.allcose":
                 single_test_case_str = f"\tassert np.allclose({entry_point}({input_params}), {entry_point}_ground_truth({input_params}), rtol=1e-07, atol={atol})\n"
             elif check_style == "==":
@@ -253,7 +361,9 @@ def decimal_to_float(func):
             elif check_style == "set":
                 single_test_case_str = f"\tassert set({entry_point}({input_params})) == set({entry_point}_ground_truth({input_params}))\n"
             elif check_style == "not_none":
-                single_test_case_str = f"\tif isinstance({entry_point}({input_params}), bool):\n"
+                single_test_case_str = (
+                    f"\tif isinstance({entry_point}({input_params}), bool):\n"
+                )
                 single_test_case_str += f"\t\tassert {entry_point}({input_params}) == ({entry_point}_ground_truth({input_params}) is not None)\n"
                 single_test_case_str += f"\telse:\n"
                 single_test_case_str += f"\t\tassert ({entry_point}({input_params}) is not None) == ({entry_point}_ground_truth({input_params}) is not None)\n"
@@ -261,30 +371,46 @@ def decimal_to_float(func):
         test_cases_str += "check()"
         return test_cases_str
 
-    def create_dynamic_check_function_find_zero(test_cases, entry_point, prompt, correct_solution, atol=0):
+    def create_dynamic_check_function_find_zero(
+        test_cases, entry_point, prompt, correct_solution, atol=0
+    ):
         test_cases_str = "import numpy as np\n" + prompt + correct_solution
-        test_cases_str = test_cases_str.replace(f"def {entry_point}(", f"def {entry_point}_ground_truth(")
+        test_cases_str = test_cases_str.replace(
+            f"def {entry_point}(", f"def {entry_point}_ground_truth("
+        )
         test_cases_str += "def check():\n"
         for case in test_cases:
             for i in range(len(case)):
                 if isinstance(case[i], str) and "\n" in case[i]:
                     case[i] = case[i].replace("\n", "\\n")
-            input_params = ", ".join([str(c) if not isinstance(c, str) else f"'{c}'" for c in case])
+            input_params = ", ".join(
+                [str(c) if not isinstance(c, str) else f"'{c}'" for c in case]
+            )
             single_test_case_str = f"\tassert abs(poly({input_params}, {entry_point}({input_params}))) <= {atol}\n"
             test_cases_str += single_test_case_str
         test_cases_str += "check()"
         return test_cases_str
 
     humaneval_data = get_human_eval_plus()
-    data1 = convert(humaneval_data.values(), test_set="base_input", task_name="evalplus/humaneval")
+    data1 = convert(
+        humaneval_data.values(), test_set="base_input", task_name="evalplus/humaneval"
+    )
     write_jsonl_file(data1, f"{root_dir}/evalplus_v2/humaneval.jsonl")
-    data2 = convert(humaneval_data.values(), test_set="plus_input", task_name="evalplus/humaneval_plus")
+    data2 = convert(
+        humaneval_data.values(),
+        test_set="plus_input",
+        task_name="evalplus/humaneval_plus",
+    )
     write_jsonl_file(data2, f"{root_dir}/evalplus_v2/humaneval_plus.jsonl")
 
     mbpp_data = get_mbpp_plus()
-    data3 = convert(mbpp_data.values(), test_set="base_input", task_name="evalplus/mbpp")
+    data3 = convert(
+        mbpp_data.values(), test_set="base_input", task_name="evalplus/mbpp"
+    )
     write_jsonl_file(data3, f"{root_dir}/evalplus_v2/mbpp.jsonl")
-    data4 = convert(mbpp_data.values(), test_set="plus_input", task_name="evalplus/mbpp_plus")
+    data4 = convert(
+        mbpp_data.values(), test_set="plus_input", task_name="evalplus/mbpp_plus"
+    )
     write_jsonl_file(data4, f"{root_dir}/evalplus_v2/mbpp_plus.jsonl")
 
     all_data = data1 + data2 + data3 + data4

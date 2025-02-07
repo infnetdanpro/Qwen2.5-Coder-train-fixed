@@ -1,9 +1,8 @@
 import json
 
-from anthropic import HUMAN_PROMPT, AI_PROMPT
-
-from lcb_runner_cq.lm_styles import LMStyle
+from anthropic import AI_PROMPT, HUMAN_PROMPT
 from lcb_runner_cq.benchmarks import TestOutputPredictionProblem
+from lcb_runner_cq.lm_styles import LMStyle
 
 
 class PromptConstants:
@@ -31,9 +30,7 @@ class PromptConstants:
 
     FORMATTING_MESSAGE = "You will use the following starter code to write the solution to the problem and enclose your code within delimiters."
 
-    FORMATTING_WITHOUT_STARTER_MESSAGE = (
-        "Read the inputs from stdin solve the problem and write the answer to stdout (do not directly test on the sample inputs). Enclose your code within delimiters as follows."
-    )
+    FORMATTING_WITHOUT_STARTER_MESSAGE = "Read the inputs from stdin solve the problem and write the answer to stdout (do not directly test on the sample inputs). Enclose your code within delimiters as follows."
 
 
 def truncate_io(io):
@@ -67,33 +64,43 @@ def parse_function_name_from_starter_code(starter_code):
     return fn
 
 
-def get_generic_question_template_test_completion(question: TestOutputPredictionProblem, testcase_input: str):
+def get_generic_question_template_test_completion(
+    question: TestOutputPredictionProblem, testcase_input: str
+):
     prompt = f"Problem:\n{question.question_content}"
     prompt += f"Function:\n```\n{question.starter_code}\n```\n"
 
     # parse function name from starter_code
     func_name = parse_function_name_from_starter_code(question.starter_code)
     prompt += "Please complete the following test case:\n\n"
-    prompt += f"```\n{format_testcase_func_name_input(func_name, testcase_input)}\n```\n"
+    prompt += (
+        f"```\n{format_testcase_func_name_input(func_name, testcase_input)}\n```\n"
+    )
 
     return prompt
 
 
-def get_cllama_question_template_answer(question: TestOutputPredictionProblem, testcase_input: str):
+def get_cllama_question_template_answer(
+    question: TestOutputPredictionProblem, testcase_input: str
+):
     prompt = f"### Question\n"
     prompt += get_generic_question_template_test_completion(question, testcase_input)
     prompt += f"### Answer\n"
     return prompt
 
 
-def get_deepseekcode_question_template_answer(question: TestOutputPredictionProblem, testcase_input: str):
+def get_deepseekcode_question_template_answer(
+    question: TestOutputPredictionProblem, testcase_input: str
+):
     prompt = f"### Instruction: {PromptConstants.SYSTEM_MESSAGE_CHAT_GENERIC}\n\n"
     prompt += get_generic_question_template_test_completion(question, testcase_input)
     prompt += f"### Response:\n\n"
     return prompt
 
 
-def get_magicoder_question_template_answer(question: TestOutputPredictionProblem, testcase_input: str):
+def get_magicoder_question_template_answer(
+    question: TestOutputPredictionProblem, testcase_input: str
+):
     # prompt = f"You will be given a question (problem specification) and will generate a correct Python program that matches the specification and passes all tests. You will NOT return anything except for the program.\n\n"
     prompt = f"Question:\n"
     prompt += get_generic_question_template_test_completion(question, testcase_input)
@@ -101,25 +108,33 @@ def get_magicoder_question_template_answer(question: TestOutputPredictionProblem
     return prompt
 
 
-def get_mixtral_question_template_answer(question: TestOutputPredictionProblem, testcase_input: str):
+def get_mixtral_question_template_answer(
+    question: TestOutputPredictionProblem, testcase_input: str
+):
     prompt = get_generic_question_template_test_completion(question, testcase_input)
     return prompt
 
 
-def get_wizard_question_template_answer(question: TestOutputPredictionProblem, testcase_input: str):
+def get_wizard_question_template_answer(
+    question: TestOutputPredictionProblem, testcase_input: str
+):
     prompt = f"""### Instruction: {PromptConstants.SYSTEM_MESSAGE_CHAT_GENERIC}\n"""
     prompt += get_generic_question_template_test_completion(question, testcase_input)
     prompt += f"### Response:\n"
     return prompt
 
 
-def get_phind_question_template_answer(question: TestOutputPredictionProblem, testcase_input: str):
+def get_phind_question_template_answer(
+    question: TestOutputPredictionProblem, testcase_input: str
+):
     prompt = get_generic_question_template_test_completion(question, testcase_input)
     prompt += f"\n\n### Assistant"
     return prompt
 
 
-def format_prompt_test_output(question: TestOutputPredictionProblem, LanguageModelStyle: LMStyle) -> str:
+def format_prompt_test_output(
+    question: TestOutputPredictionProblem, LanguageModelStyle: LMStyle
+) -> str:
     testcase_input = question.test[0].input
     if LanguageModelStyle == LMStyle.OpenAIChat:
         chat_messages = [
@@ -131,7 +146,9 @@ def format_prompt_test_output(question: TestOutputPredictionProblem, LanguageMod
         chat_messages += [
             {
                 "role": "user",
-                "content": get_generic_question_template_test_completion(question, testcase_input),
+                "content": get_generic_question_template_test_completion(
+                    question, testcase_input
+                ),
             },
         ]
         return chat_messages
@@ -144,20 +161,28 @@ def format_prompt_test_output(question: TestOutputPredictionProblem, LanguageMod
         prompt = [
             {
                 "role": "user",
-                "content": get_generic_question_template_test_completion(question, testcase_input).rstrip(),
+                "content": get_generic_question_template_test_completion(
+                    question, testcase_input
+                ).rstrip(),
             }
         ]
         return system, prompt
     elif LanguageModelStyle == LMStyle.Gemini:
         prompt = f"{PromptConstants.SYSTEM_MESSAGE_CHAT_GENERIC}\n"
-        prompt += f"{get_generic_question_template_test_completion(question, testcase_input)}"
+        prompt += (
+            f"{get_generic_question_template_test_completion(question, testcase_input)}"
+        )
         return prompt
     elif LanguageModelStyle == LMStyle.DeepSeekCodeInstruct:
-        prompt = f"{get_deepseekcode_question_template_answer(question, testcase_input)}"
+        prompt = (
+            f"{get_deepseekcode_question_template_answer(question, testcase_input)}"
+        )
         return prompt
     elif LanguageModelStyle == LMStyle.CodeLLaMaInstruct:
         prompt = f"[INST] <<SYS>>\n{PromptConstants.SYSTEM_MESSAGE_INST_CLLAMA}\n<</SYS>>\n\n"
-        prompt += f"{get_cllama_question_template_answer(question, testcase_input)}\n[/INST]"
+        prompt += (
+            f"{get_cllama_question_template_answer(question, testcase_input)}\n[/INST]"
+        )
         return prompt
     elif LanguageModelStyle == LMStyle.MagiCoder:
         prompt = f"{PromptConstants.SYSTEM_MESSAGE_CHAT_GENERIC}\n"
@@ -171,7 +196,9 @@ def format_prompt_test_output(question: TestOutputPredictionProblem, LanguageMod
         return prompt
     elif LanguageModelStyle == LMStyle.OC:
         prompt = f"{PromptConstants.SYSTEM_MESSAGE_CHAT_GENERIC}\n"
-        prompt += f"{get_generic_question_template_test_completion(question, testcase_input)}"
+        prompt += (
+            f"{get_generic_question_template_test_completion(question, testcase_input)}"
+        )
         return prompt
     elif LanguageModelStyle == LMStyle.MistralWeb:
         chat_messages = [
@@ -181,9 +208,13 @@ def format_prompt_test_output(question: TestOutputPredictionProblem, LanguageMod
             },
             {
                 "role": "user",
-                "content": get_generic_question_template_test_completion(question, testcase_input),
+                "content": get_generic_question_template_test_completion(
+                    question, testcase_input
+                ),
             },
         ]
         return chat_messages
     else:
-        raise NotImplementedError(f"LanguageModelStyle {LanguageModelStyle} not implemented")
+        raise NotImplementedError(
+            f"LanguageModelStyle {LanguageModelStyle} not implemented"
+        )

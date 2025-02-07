@@ -1,12 +1,13 @@
+import json
 import os
 import re
-import json
+
 
 def extract_ts_code(
     text,
     item,
 ):
-    signature_escaped = re.escape(item['signature'])
+    signature_escaped = re.escape(item["signature"])
     code_block = re.search(
         rf"```(?:[Tt](?:ypescript|s))?.*?(const\s+{signature_escaped}.*?)```",
         text,

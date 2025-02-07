@@ -12,9 +12,6 @@ from typing import Any, Dict, List, Tuple
 from warnings import warn
 
 import numpy as np
-from termcolor import cprint
-from tqdm import tqdm
-
 from evalplus.data import (
     get_human_eval_plus,
     get_human_eval_plus_hash,
@@ -23,6 +20,8 @@ from evalplus.data import (
     load_solutions,
 )
 from evalplus.data.mbpp import mbpp_serialize_inputs
+from termcolor import cprint
+from tqdm import tqdm
 
 # from evalplus.data.utils import CACHE_DIR
 CACHE_DIR = "/home/data/xixi.yjx/eval_cache/evalplus"
@@ -145,12 +144,20 @@ def evaluate(flags):
         results = compatible_eval_result(results)
     else:
         if flags.dataset == "humaneval":
-            problems = get_human_eval_plus(mini=flags.mini, noextreme=flags.noextreme, version=flags.version)
-            dataset_hash = get_human_eval_plus_hash(mini=flags.mini, noextreme=flags.noextreme, version=flags.version)
+            problems = get_human_eval_plus(
+                mini=flags.mini, noextreme=flags.noextreme, version=flags.version
+            )
+            dataset_hash = get_human_eval_plus_hash(
+                mini=flags.mini, noextreme=flags.noextreme, version=flags.version
+            )
             expected_output = get_groundtruth(problems, dataset_hash, [])
         elif flags.dataset == "mbpp":
-            problems = get_mbpp_plus(mini=flags.mini, noextreme=flags.noextreme, version=flags.version)
-            dataset_hash = get_mbpp_plus_hash(mini=flags.mini, noextreme=flags.noextreme, version=flags.version)
+            problems = get_mbpp_plus(
+                mini=flags.mini, noextreme=flags.noextreme, version=flags.version
+            )
+            dataset_hash = get_mbpp_plus_hash(
+                mini=flags.mini, noextreme=flags.noextreme, version=flags.version
+            )
             expected_output = get_groundtruth(
                 problems,
                 dataset_hash,
@@ -174,9 +181,15 @@ def evaluate(flags):
             for sample in tqdm(load_solutions(flags.samples)):
                 task_id = sample["task_id"]
                 if task_id not in problems:
-                    warn(f"Task {task_id} is found in the samples but not found in the dataset")
+                    warn(
+                        f"Task {task_id} is found in the samples but not found in the dataset"
+                    )
                     continue
-                solution = sample["solution"] if "solution" in sample else problems[task_id]["prompt"] + sample["completion"]
+                solution = (
+                    sample["solution"]
+                    if "solution" in sample
+                    else problems[task_id]["prompt"] + sample["completion"]
+                )
                 remainings.add(sample["_identifier"])
                 args = (
                     flags.dataset,
@@ -225,13 +238,17 @@ def evaluate(flags):
                         return []
 
                     if flags.test_details:
-                        return [inputs[i] for i in range(len(details)) if not details[i]]
+                        return [
+                            inputs[i] for i in range(len(details)) if not details[i]
+                        ]
 
                     # else => simply return the only and the last fail test
                     return [inputs[len(details) - 1]]
 
                 base_stat, base_details = res["base"]
-                base_fail_tests = get_failed_tests(base_stat, base_details, problems[task_id]["base_input"])
+                base_fail_tests = get_failed_tests(
+                    base_stat, base_details, problems[task_id]["base_input"]
+                )
 
                 # initialize plus tests
                 plus_stat = None
@@ -240,7 +257,9 @@ def evaluate(flags):
                 # with plus tests
                 if not flags.base_only:
                     plus_stat, plus_details = res["plus"]
-                    plus_fail_tests = get_failed_tests(plus_stat, plus_details, problems[task_id]["plus_input"])
+                    plus_fail_tests = get_failed_tests(
+                        plus_stat, plus_details, problems[task_id]["plus_input"]
+                    )
 
                 if flags.dataset == "mbpp":
                     base_fail_tests = mbpp_serialize_inputs(task_id, base_fail_tests)
@@ -266,17 +285,32 @@ def evaluate(flags):
         bc = sum([r["base_status"] == PASS for r in res])
         base_correct.append(bc)
         if not flags.base_only:
-            new_correct.append(sum([res[i]["base_status"] == res[i]["plus_status"] == PASS for i in range(len(res))]))
+            new_correct.append(
+                sum(
+                    [
+                        res[i]["base_status"] == res[i]["plus_status"] == PASS
+                        for i in range(len(res))
+                    ]
+                )
+            )
     base_correct = np.array(base_correct)
 
-    pass_at_k = {f"pass@{k}": estimate_pass_at_k(total, base_correct, k).mean() for k in [1, 10, 100] if total.min() >= k}
+    pass_at_k = {
+        f"pass@{k}": estimate_pass_at_k(total, base_correct, k).mean()
+        for k in [1, 10, 100]
+        if total.min() >= k
+    }
     cprint(f"{flags.dataset} (base tests)", "red")
     for k, v in pass_at_k.items():
         cprint(f"{k}:\t{v:.3f}", "red")
 
     if new_correct:
         cprint(f"{flags.dataset}+ (base + extra tests)", "green")
-        pass_at_k = {f"pass@{k}": estimate_pass_at_k(total, np.array(new_correct), k).mean() for k in [1, 10, 100] if (total >= k).all()}
+        pass_at_k = {
+            f"pass@{k}": estimate_pass_at_k(total, np.array(new_correct), k).mean()
+            for k in [1, 10, 100]
+            if (total >= k).all()
+        }
         for k, v in pass_at_k.items():
             cprint(f"{k}:\t{v:.3f}", "green")
 
@@ -302,7 +336,9 @@ def evaluate(flags):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--dataset", required=True, type=str, choices=["humaneval", "mbpp"])
+    parser.add_argument(
+        "--dataset", required=True, type=str, choices=["humaneval", "mbpp"]
+    )
     parser.add_argument("--samples", required=True, type=str)
     parser.add_argument("--base-only", action="store_true")
     parser.add_argument("--parallel", default=None, type=int)
@@ -311,8 +347,12 @@ def main():
     parser.add_argument("--min-time-limit", default=1, type=float)
     parser.add_argument("--gt-time-limit-factor", default=4.0, type=float)
     parser.add_argument("--mini", action="store_true")
-    parser.add_argument("--noextreme", action="store_true", help="Omit extreme test inputs")
-    parser.add_argument("--version", default="default", type=str, help="Version of the dataset")
+    parser.add_argument(
+        "--noextreme", action="store_true", help="Omit extreme test inputs"
+    )
+    parser.add_argument(
+        "--version", default="default", type=str, help="Version of the dataset"
+    )
     args = parser.parse_args()
 
     evaluate(args)

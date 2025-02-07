@@ -1,8 +1,15 @@
 import json
 import shutil
-
-from utils import save_json, save_lines, load_json, load_lines, join_seperator, extract_create_table_prompt
 from pathlib import Path
+
+from utils import (
+    extract_create_table_prompt,
+    join_seperator,
+    load_json,
+    load_lines,
+    save_json,
+    save_lines,
+)
 
 SCHEMA_EXAMPLE_ROWS = 3
 
@@ -54,10 +61,14 @@ if __name__ == "__main__":
     spider_dev_questions = load_json(spider_raw_folder / "dev.json")
     spider_databases = spider_raw_folder / "database"
 
-    spider_dev_questions_processed = process_data(spider_dev_questions, spider_databases)
+    spider_dev_questions_processed = process_data(
+        spider_dev_questions, spider_databases
+    )
     save_json(spider_dev_questions_processed, output_root / "spider-dev.json")
 
-    spider_dev_golden = [join_seperator(e["output"], e["db_id"]) for e in spider_dev_questions_processed]
+    spider_dev_golden = [
+        join_seperator(e["output"], e["db_id"]) for e in spider_dev_questions_processed
+    ]
     save_lines(spider_dev_golden, output_root / "golden.sql")
 
     spider_used_databases = output_root / "database"

@@ -1,10 +1,10 @@
-import json
-import zlib
-import pickle
 import base64
-from enum import Enum
-from datetime import datetime
+import json
+import pickle
+import zlib
 from dataclasses import dataclass
+from datetime import datetime
+from enum import Enum
 
 from datasets import load_dataset
 
@@ -125,11 +125,13 @@ class CodeGenerationProblem:
             ),
         }
 
+
 def load_code_generation_dataset() -> list[CodeGenerationProblem]:
     dataset = load_dataset("livecodebench/code_generation_lite", split="test")
     dataset = [CodeGenerationProblem(**p) for p in dataset]
     print(f"Loaded {len(dataset)} problems")
     return dataset
+
 
 if __name__ == "__main__":
     dataset = load_code_generation_dataset()

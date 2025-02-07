@@ -4,10 +4,6 @@ import os
 import pathlib
 from typing import Dict, Generator, List, Optional, Set, Tuple
 
-from tqdm import tqdm
-from tree_sitter import Node
-from tree_sitter_languages import get_parser
-
 from data import (
     get_bigcodebench,
     load_solutions,
@@ -15,6 +11,9 @@ from data import (
     write_jsonl,
 )
 from syncheck import syntax_check
+from tqdm import tqdm
+from tree_sitter import Node
+from tree_sitter_languages import get_parser
 
 CLASS_TYPE = "class_definition"
 FUNCTION_TYPE = "function_definition"
@@ -125,18 +124,26 @@ def sanitize(code: str, entrypoint: Optional[str] = None) -> str:
             import_nodes.append(child)
         elif child.type == CLASS_TYPE:
             name = get_definition_name(child)
-            if not (name in class_names or name in variable_names or name in function_names):
+            if not (
+                name in class_names or name in variable_names or name in function_names
+            ):
                 definition_nodes.append((name, child))
                 class_names.add(name)
         elif child.type == FUNCTION_TYPE:
             name = get_definition_name(child)
-            if not (name in function_names or name in variable_names or name in class_names):
+            if not (
+                name in function_names or name in variable_names or name in class_names
+            ):
                 definition_nodes.append((name, child))
                 function_names.add(get_definition_name(child))
-        elif child.type == EXPRESSION_TYPE and child.children[0].type == ASSIGNMENT_TYPE:
+        elif (
+            child.type == EXPRESSION_TYPE and child.children[0].type == ASSIGNMENT_TYPE
+        ):
             subchild = child.children[0]
             name = get_definition_name(subchild)
-            if not (name in variable_names or name in function_names or name in class_names):
+            if not (
+                name in variable_names or name in function_names or name in class_names
+            ):
                 definition_nodes.append((name, subchild))
                 variable_names.add(name)
 
@@ -170,7 +177,9 @@ def sanitize(code: str, entrypoint: Optional[str] = None) -> str:
     return sanitized_output
 
 
-def script(samples: str, inplace: bool = False, debug_task: str = None, calibrate: bool = False):
+def script(
+    samples: str, inplace: bool = False, debug_task: str = None, calibrate: bool = False
+):
     # task_id -> entry_point
     entry_point = {}
     # merge two datasets
@@ -190,7 +199,9 @@ def script(samples: str, inplace: bool = False, debug_task: str = None, calibrat
                 new_name = target_path.name + "-sanitized"
         else:
             if calibrate:
-                new_name = target_path.name.replace(".jsonl", "-sanitized-calibrated.jsonl")
+                new_name = target_path.name.replace(
+                    ".jsonl", "-sanitized-calibrated.jsonl"
+                )
             else:
                 new_name = target_path.name.replace(".jsonl", "-sanitized.jsonl")
         target_path = target_path.parent / new_name
@@ -204,7 +215,9 @@ def script(samples: str, inplace: bool = False, debug_task: str = None, calibrat
     for solution in tqdm(load_solutions(samples)):
         task_id = solution["task_id"]
         if task_id not in dataset:
-            print(f"Skiping {task_id} as it does not existing in the latest EvalPlus dataset.")
+            print(
+                f"Skiping {task_id} as it does not existing in the latest EvalPlus dataset."
+            )
             continue
 
         function_name = entry_point[task_id] if task_id in entry_point else None
@@ -216,10 +229,15 @@ def script(samples: str, inplace: bool = False, debug_task: str = None, calibrat
         if "solution" in solution:
             old_code = solution["solution"]
             if calibrate:
-                old_code = solution["solution"].replace("```python\n    ", "```python\n" + dataset[task_id]["complete_prompt"] + "    ")
+                old_code = solution["solution"].replace(
+                    "```python\n    ",
+                    "```python\n" + dataset[task_id]["complete_prompt"] + "    ",
+                )
         else:
             assert "completion" in solution
-            old_code = dataset[task_id]["complete_prompt"] + "\n" + solution["completion"]
+            old_code = (
+                dataset[task_id]["complete_prompt"] + "\n" + solution["completion"]
+            )
 
         new_code = sanitize(code=old_code, entrypoint=function_name)
         # if changed, print the message

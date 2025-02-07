@@ -1,9 +1,9 @@
+import argparse
 import json
 from pathlib import Path
-import argparse
+
 from rich.console import Console
 from rich.table import Table
-
 
 file_cache = {}
 
@@ -29,7 +29,9 @@ def try_collect_evalplus(path):
     try:
         payload = {
             "HumanEval": ret(path / "humaneval" / "result.json", "humaneval", "pass@1"),
-            "HumanEval+": ret(path / "humaneval" / "result.json", "humaneval+", "pass@1"),
+            "HumanEval+": ret(
+                path / "humaneval" / "result.json", "humaneval+", "pass@1"
+            ),
             "MBPP": ret(path / "mbpp" / "result.json", "mbpp", "pass@1"),
             "MBPP+": ret(path / "mbpp" / "result.json", "mbpp+", "pass@1"),
         }
@@ -41,7 +43,15 @@ def try_collect_evalplus(path):
 
 def try_collect_multipl_e(path):
     try:
-        lang_mapper = {"java": "Java", "cpp": "C++", "js": "JavaScript", "cs": "C#", "php": "php", "sh": "Shell", "ts": "TypeScript"}
+        lang_mapper = {
+            "java": "Java",
+            "cpp": "C++",
+            "js": "JavaScript",
+            "cs": "C#",
+            "php": "php",
+            "sh": "Shell",
+            "ts": "TypeScript",
+        }
         d = ret(path / "results.json")
         payload = {lang_mapper[k]: v for k, v in d.items()}
     except Exception as e:

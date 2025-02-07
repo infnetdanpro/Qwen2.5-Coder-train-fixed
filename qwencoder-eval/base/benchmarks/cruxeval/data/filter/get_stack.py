@@ -3,11 +3,10 @@
 # Taken from https://gist.github.com/crusaderky/cf0575cfeeee8faa1bb1b3480bc4a87a
 
 import sys
-from ctypes import POINTER, py_object, Structure, c_ssize_t, c_void_p, sizeof
+from ctypes import POINTER, Structure, c_ssize_t, c_void_p, py_object, sizeof
 from typing import Any, Iterator, Optional, Sequence, Union
 
-
-__all__ = ("OpStack", )
+__all__ = ("OpStack",)
 
 
 class Frame(Structure):
@@ -23,6 +22,7 @@ class Frame(Structure):
         ("f_valuestack", POINTER(py_object)),
         ("f_stacktop", POINTER(py_object)),
     )
+
 
 if sys.flags.debug:
     Frame._fields_ = (
@@ -77,7 +77,7 @@ class OpStack(Sequence[Any]):
             item = slice(
                 self._preproc_slice(item.start, 0),
                 self._preproc_slice(item.stop, self._len),
-                item.step
+                item.step,
             )
             return self._frame.f_valuestack[item]
 

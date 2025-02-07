@@ -7,10 +7,9 @@ import warnings
 from dataclasses import dataclass
 from pathlib import Path
 
+from aider.dump import dump  # noqa: F401
 from grep_ast import TreeContext, filename_to_lang
 from tree_sitter_languages import get_parser  # noqa: E402
-
-from aider.dump import dump  # noqa: F401
 
 # tree_sitter is throwing a FutureWarning
 warnings.simplefilter("ignore", category=FutureWarning)
@@ -258,7 +257,9 @@ def find_filenames_and_linenums(text, fnames):
     Search text for all occurrences of <filename>:\\d+ and make a list of them
     where <filename> is one of the filenames in the list `fnames`.
     """
-    pattern = re.compile(r"(\b(?:" + "|".join(re.escape(fname) for fname in fnames) + r"):\d+\b)")
+    pattern = re.compile(
+        r"(\b(?:" + "|".join(re.escape(fname) for fname in fnames) + r"):\d+\b)"
+    )
     matches = pattern.findall(text)
     result = {}
     for match in matches:

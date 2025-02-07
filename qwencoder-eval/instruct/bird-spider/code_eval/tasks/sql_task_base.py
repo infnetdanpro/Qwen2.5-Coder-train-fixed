@@ -47,7 +47,9 @@ class SqlTaskBase(Task):
         generation = generation.replace("\n", " ")
         generation = generation.replace(";", "")
         generation = generation.replace("</s>", "")
-        generation = self._stop_at_stop_token(generation, self.stop_words)  # Newly added
+        generation = self._stop_at_stop_token(
+            generation, self.stop_words
+        )  # Newly added
 
         db_id = ex["db_id"]
         generation = f"SELECT {generation}{SPECIAL_SEPERATOR}{db_id}"

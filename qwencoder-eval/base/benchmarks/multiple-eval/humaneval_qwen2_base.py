@@ -51,12 +51,24 @@ class HumanEval:
         os.makedirs(self.log_dir, exist_ok=True)
 
     def eval_model(self, llm: LLM):
-        assert self.log_dir is not None, "log_dir should not be None when evaluating humaneval"
-        dataset = HumanEvalDataset(self.data_root, sample_num=self.n_sample, language=self.language, issft=self.sft)
+        assert (
+            self.log_dir is not None
+        ), "log_dir should not be None when evaluating humaneval"
+        dataset = HumanEvalDataset(
+            self.data_root,
+            sample_num=self.n_sample,
+            language=self.language,
+            issft=self.sft,
+        )
         if self.k > 1:
             assert self.n_sample >= 100, "HumanEval PASS@100 needs n_sample >= 100"
 
-        sampling_params = SamplingParams(max_tokens=self.max_gen_len, temperature=self.temperature, top_p=self.top_p, stop=self.eos)
+        sampling_params = SamplingParams(
+            max_tokens=self.max_gen_len,
+            temperature=self.temperature,
+            top_p=self.top_p,
+            stop=self.eos,
+        )
 
         # Generate.
         with Path(self.log_file_path).open("w") as f_log:
@@ -64,7 +76,10 @@ class HumanEval:
 
             if self.no_batching:
                 print(f"Disable: continuous batching. This will be slow.")
-                generated = [llm.generate(prompt, sampling_params, use_tqdm=False) for prompt in tqdm(prompts)]
+                generated = [
+                    llm.generate(prompt, sampling_params, use_tqdm=False)
+                    for prompt in tqdm(prompts)
+                ]
             else:
                 print(f"Enable: continuous batching.")
                 generated = llm.generate(prompts, sampling_params, use_tqdm=True)
@@ -74,7 +89,13 @@ class HumanEval:
                 # suffixprediction = output.outputs[0].text.replace("\t", "    ")
                 suffixprediction = output.outputs[0].text
                 prediction = output.prompt + suffixprediction
-                suffixprediction = cleanup_code(suffixprediction, self.language, "humaneval", self.sft, dataset.stopwords)
+                suffixprediction = cleanup_code(
+                    suffixprediction,
+                    self.language,
+                    "humaneval",
+                    self.sft,
+                    dataset.stopwords,
+                )
                 original_prompt = data["original_prompt"]
                 if not self.sft:
                     suffixprediction = original_prompt + "\n" + suffixprediction
@@ -97,14 +118,18 @@ class HumanEval:
         timeout = 10
         res, details = evaluate_functional_correctness(
             input_file=self.log_file_path,
-            problem_file=os.path.join(self.data_root, f"humaneval-{self.language}.jsonl"),
+            problem_file=os.path.join(
+                self.data_root, f"humaneval-{self.language}.jsonl"
+            ),
             tmp_dir=self.log_dir,
             timeout=timeout,
             language=self.language,
         )
         print(f"{self.language} score is", res["pass@%d" % self.k])
 
-        details_file = os.path.join(self.log_dir, f"humaneval-{self.language}-details.json")
+        details_file = os.path.join(
+            self.log_dir, f"humaneval-{self.language}-details.json"
+        )
         with Path(details_file).open("w") as f:
             json.dump(details, f, ensure_ascii=False, indent=2)
 

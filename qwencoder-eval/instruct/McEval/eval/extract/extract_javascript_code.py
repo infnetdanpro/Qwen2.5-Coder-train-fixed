@@ -1,6 +1,6 @@
+import json
 import os
 import re
-import json
 
 # from humanevalpack import create_all_tasks, create_task
 # create_all_tasks()
@@ -10,7 +10,7 @@ def extract_js_code(
     text,
     item,
 ):
-    signature_escaped = re.escape(item['signature'])
+    signature_escaped = re.escape(item["signature"])
     code_block = re.search(
         rf"```(?:[Jj](?:avascript|s))?.*?(const\s+{signature_escaped}.*?)```",
         text,

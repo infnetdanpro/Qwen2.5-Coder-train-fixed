@@ -1,12 +1,11 @@
-import os
 import json
+import os
 from abc import ABC, abstractmethod
 
-from tqdm import tqdm
-
 from lcb_runner_cq.lm_styles import LanguageModel
-from lcb_runner_cq.utils.path_utils import get_cache_path
 from lcb_runner_cq.utils.multiprocess import run_tasks_in_parallel
+from lcb_runner_cq.utils.path_utils import get_cache_path
+from tqdm import tqdm
 
 
 class BaseRunner(ABC):
@@ -69,13 +68,17 @@ class BaseRunner(ABC):
         raise NotImplementedError
 
     def run_main(self, benchmark: list, format_prompt: callable) -> list:
-        prompts = [format_prompt(problem, self.model.model_style) for problem in benchmark]
+        prompts = [
+            format_prompt(problem, self.model.model_style) for problem in benchmark
+        ]
         outputs = self.run_batch(prompts)
         self.save_cache()
         return outputs
 
     def run_for_long(self, benchmark: list, format_prompt: callable) -> list:
-        prompts = [format_prompt(problem, self.model.model_style) for problem in benchmark]
+        prompts = [
+            format_prompt(problem, self.model.model_style) for problem in benchmark
+        ]
         outputs = self.run_one_by_one(prompts)
         self.save_cache()
         return outputs

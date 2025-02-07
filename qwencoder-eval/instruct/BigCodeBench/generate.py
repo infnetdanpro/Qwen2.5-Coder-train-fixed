@@ -1,9 +1,9 @@
-import os
-import json
 import argparse
+import json
+import os
 
-from model import DecoderBase, make_model
 from data import get_bigcodebench, write_jsonl
+from model import DecoderBase, make_model
 from rich.progress import (
     BarColumn,
     MofNCompleteColumn,
@@ -28,7 +28,9 @@ def codegen(
     dataset = get_bigcodebench(subset=subset)
 
     if model.is_direct_completion() and split == "instruct":
-        raise Exception("Base model does not support direct completion for instruct tasks")
+        raise Exception(
+            "Base model does not support direct completion for instruct tasks"
+        )
 
     # create save_path if it doesn't exist, e.g., a/b.jsonl
     dirname = os.path.dirname(save_path)
@@ -47,7 +49,9 @@ def codegen(
     assert outputs, "No outputs from model!"
 
     samples = []
-    for task_id, complete_prompt, completion in zip(task_ids, complete_prompts, outputs):
+    for task_id, complete_prompt, completion in zip(
+        task_ids, complete_prompts, outputs
+    ):
         if model.is_direct_completion():
             samples.append(dict(task_id=task_id, solution=complete_prompt + completion))
         else:
@@ -60,7 +64,9 @@ def codegen(
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--model", required=True, type=str)
-    parser.add_argument("--split", required=True, type=str, choices=["complete", "instruct"])
+    parser.add_argument(
+        "--split", required=True, type=str, choices=["complete", "instruct"]
+    )
     parser.add_argument("--subset", default="full", type=str, choices=["full", "hard"])
     parser.add_argument("--save_path", default=None, type=str)
     parser.add_argument("--bs", default=1, type=int)
@@ -70,7 +76,12 @@ def main():
     parser.add_argument("--strip_newlines", action="store_true")
     parser.add_argument("--resume", action="store_true")
     parser.add_argument("--id_range", nargs=2, type=int)
-    parser.add_argument("--backend", default="vllm", type=str, choices=["vllm", "hf", "openai", "mistral", "anthropic", "google"])
+    parser.add_argument(
+        "--backend",
+        default="vllm",
+        type=str,
+        choices=["vllm", "hf", "openai", "mistral", "anthropic", "google"],
+    )
     parser.add_argument("--base_url", default=None, type=str)
     parser.add_argument("--tp", default=1, type=int)
     parser.add_argument("--trust_remote_code", action="store_true")
@@ -106,7 +117,10 @@ def main():
 
     extra = "-" + args.subset if args.subset != "full" else ""
     if not args.save_path:
-        save_path = args.model.replace("/", "--") + f"--bigcodebench{extra}-{args.split}--{args.backend}-{args.temperature}-{args.n_samples}.jsonl"
+        save_path = (
+            args.model.replace("/", "--")
+            + f"--bigcodebench{extra}-{args.split}--{args.backend}-{args.temperature}-{args.n_samples}.jsonl"
+        )
     else:
         save_path = args.save_path
 

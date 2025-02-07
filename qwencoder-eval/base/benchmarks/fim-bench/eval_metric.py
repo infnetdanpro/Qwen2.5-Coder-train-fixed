@@ -1,19 +1,18 @@
+import json
+import os
 import re
 import sys
-import json
-import timeout_decorator
-import numpy as np
-
-from tqdm import tqdm
-from typing import Callable, List
-from fuzzywuzzy import fuzz
-import editdistance
 from functools import partial
+from typing import Callable, List, Union
+
+import editdistance
+import numpy as np
+import timeout_decorator
 import torch.multiprocessing as mp
+from fuzzywuzzy import fuzz
+from tqdm import tqdm
 from tree_sitter import Language, Parser
-from typing import List, Callable, Union
 from tree_sitter.binding import Node as TSNode
-import os
 
 parser = None
 
@@ -58,7 +57,7 @@ def cal_exact_match(references, hypotheses):
 
 
 def remove_comments(code):
-    code = re.sub(r'#.*', '', code)
+    code = re.sub(r"#.*", "", code)
     return code
 
 
@@ -91,10 +90,10 @@ def get_valid_completion(prompt, completion, parser):
 
 
 def dfs(
-        node: TSNode,
-        node_types: List[str],
-        callback: Callable,
-        ignore_node_types: List[str] = None,
+    node: TSNode,
+    node_types: List[str],
+    callback: Callable,
+    ignore_node_types: List[str] = None,
 ):
     """
     Helper to traverse parsed AST
@@ -120,10 +119,11 @@ def collect_nodes(root_node, node_types, ignore_node_types=None):
         try:
             dfs(root_node, node_types, _cb, ignore_node_types)
         except RecursionError as err:
-            print('collection of nodes failed due to RecursionError')
+            print("collection of nodes failed due to RecursionError")
             return []
 
     return result
+
 
 @timeout_decorator.timeout(5)
 def get_ast(parser, code):
@@ -193,48 +193,60 @@ def process_examples(task, args):
         num_target_lines = sum([1 for l in target.split("\n") if l.strip()])
         pred_lines = [l for l in prediction.split("\n") if l.strip()][:num_target_lines]
         prediction = "\n".join(pred_lines)
-    
+
     trunc_s = {
         "task_id": sample["task_id"],
         "pred": prediction,
         "target": target,
-        #"origin": origin
+        # "origin": origin
     }
-    
+
     return trunc_s
 
 
 def compute_metric_stmt(args):
     all_task_results = {}
-    
+
     for task in args.tasks:
         print(f"\nComputing metrics for task: {task}")
-        with open(f"{args.output_dir}/{args.dataset}/{args.language}/{task}/prediction.jsonl", "r") as f_pred:
+        with open(
+            f"{args.output_dir}/{args.dataset}/{args.language}/{task}/prediction.jsonl",
+            "r",
+        ) as f_pred:
             samples = []
             for l in f_pred.readlines():
                 samples.append(json.loads(l))
 
         # 构建task特定的prompt文件路径
-        task_prompt_file = args.prompt_file.replace('TASK', task)
+        task_prompt_file = args.prompt_file.replace("TASK", task)
         examples = {}
         with open(task_prompt_file, "r") as f_in:
             for l in f_in.readlines():
                 ex = json.loads(l)
-                if hasattr(args, "focused_repo") and args.focused_repo and args.focused_repo not in re.sub('/', '_', ex['metadata']['repository']):
+                if (
+                    hasattr(args, "focused_repo")
+                    and args.focused_repo
+                    and args.focused_repo
+                    not in re.sub("/", "_", ex["metadata"]["repository"])
+                ):
                     continue
                 examples[ex["metadata"]["task_id"]] = {
                     "task_id": ex["metadata"]["task_id"],
                     "prompt": ex["prompt"],
-                    "groundtruth": ex["groundtruth"]
+                    "groundtruth": ex["groundtruth"],
                 }
 
         if len(samples) == len(examples):
-            print('Warning: len(samples) ({}) == len(examples) ({})'.format(len(samples), len(examples)))
+            print(
+                "Warning: len(samples) ({}) == len(examples) ({})".format(
+                    len(samples), len(examples)
+                )
+            )
 
         global parser
         ts_lang = args.language
-        if ts_lang == 'csharp':
-            ts_lang = 'c_sharp'
+        if ts_lang == "csharp":
+            ts_lang = "c_sharp"
         language = Language(args.ts_lib, ts_lang)
         parser = Parser()
         parser.set_language(language)
@@ -245,14 +257,18 @@ def compute_metric_stmt(args):
         worker = partial(process_examples, task)
 
         with tqdm(total=len(samples)) as pbar:
-            for trunc_s in pool.imap_unordered(worker, zip(samples, [examples[s["task_id"]] for s in samples])):
+            for trunc_s in pool.imap_unordered(
+                worker, zip(samples, [examples[s["task_id"]] for s in samples])
+            ):
                 truncated_samples.append(trunc_s)
                 pbar.update()
 
         pool.close()
         pool.join()
 
-        task_output_dir = os.path.join(args.output_dir, args.dataset, args.language, task)
+        task_output_dir = os.path.join(
+            args.output_dir, args.dataset, args.language, task
+        )
         # with open(f"{task_output_dir}/prediction_truncated.jsonl", 'w', encoding="utf-8") as pt:
         #     for trunc_s in truncated_samples:
         #         pt.write(json.dumps(trunc_s) + "\n")
@@ -271,14 +287,16 @@ def compute_metric_stmt(args):
             edit_sim_repoeval += es_repoeval
             exact_match += em
 
-            detailed_results.append({
-                "task_id": trunc_s["task_id"],
-                "pred": trunc_s["pred"],
-                "target": trunc_s["target"],
-                "em": em,
-                "es": es,
-                "es_repoeval": es_repoeval
-            })
+            detailed_results.append(
+                {
+                    "task_id": trunc_s["task_id"],
+                    "pred": trunc_s["pred"],
+                    "target": trunc_s["target"],
+                    "em": em,
+                    "es": es,
+                    "es_repoeval": es_repoeval,
+                }
+            )
 
         total_samples = len(truncated_samples)
         em_ratio = round(exact_match / total_samples * 100, 2)
@@ -293,7 +311,7 @@ def compute_metric_stmt(args):
         )
 
         # 保存详细结果
-        with open(f"{task_output_dir}/detailed_results.json", 'w') as f:
+        with open(f"{task_output_dir}/detailed_results.json", "w") as f:
             for dr in detailed_results:
                 f.write(json.dumps(dr) + "\n")
 
@@ -302,20 +320,29 @@ def compute_metric_stmt(args):
             "em": em_ratio,
             "es": edit_sim_avg,
             "es_repoeval": edit_sim_repoeval_avg,
-            "total": total_samples
+            "total": total_samples,
         }
-        
-        with open(f"{task_output_dir}/results.json", 'w') as f:
+
+        with open(f"{task_output_dir}/results.json", "w") as f:
             json.dump(task_results, f, indent=2)
-            
+
         # 将当前任务的结果添加到总结果字典中
         all_task_results[task] = task_results
 
     # 计算所有任务的加权平均值
     total_samples = sum(res["total"] for res in all_task_results.values())
-    weighted_em = sum(res["em"] * res["total"] for res in all_task_results.values()) / total_samples
-    weighted_es = sum(res["es"] * res["total"] for res in all_task_results.values()) / total_samples
-    weighted_es_repoeval = sum(res["es_repoeval"] * res["total"] for res in all_task_results.values()) / total_samples
+    weighted_em = (
+        sum(res["em"] * res["total"] for res in all_task_results.values())
+        / total_samples
+    )
+    weighted_es = (
+        sum(res["es"] * res["total"] for res in all_task_results.values())
+        / total_samples
+    )
+    weighted_es_repoeval = (
+        sum(res["es_repoeval"] * res["total"] for res in all_task_results.values())
+        / total_samples
+    )
 
     # 创建最终的合并结果
     merged_results = {
@@ -323,13 +350,13 @@ def compute_metric_stmt(args):
             "em": round(weighted_em, 4),
             "es": round(weighted_es, 4),
             "es_repoeval": round(weighted_es_repoeval, 4),
-            "total": total_samples
+            "total": total_samples,
         },
-        "per_task": all_task_results
+        "per_task": all_task_results,
     }
 
     # 保存合并后的结果
-    with open(f"{args.output_dir}/{args.dataset}/results.json", 'w') as f:
+    with open(f"{args.output_dir}/{args.dataset}/results.json", "w") as f:
         json.dump(merged_results, f, indent=2)
 
     print("\nOverall Results (Weighted Average):")
@@ -338,39 +365,52 @@ def compute_metric_stmt(args):
     print(f"ES RepoEval: {weighted_es_repoeval:.2f}")
     print(f"Total Samples: {total_samples}")
 
+
 def compute_metric_stmt_multilang(args):
     all_task_results = {}
-    
+
     for language in args.languages:
         print(f"\nComputing metrics for language: {language}")
-        with open(f"{args.output_dir}/{args.dataset}/{language}/{args.task}/prediction.jsonl", "r") as f_pred:
+        with open(
+            f"{args.output_dir}/{args.dataset}/{language}/{args.task}/prediction.jsonl",
+            "r",
+        ) as f_pred:
             samples = []
             for l in f_pred.readlines():
                 samples.append(json.loads(l))
 
         # 构建task特定的prompt文件路径
-        task_prompt_file = args.prompt_file.replace('LANGUAGE', language)
+        task_prompt_file = args.prompt_file.replace("LANGUAGE", language)
         examples = {}
         with open(task_prompt_file, "r") as f_in:
             for l in f_in.readlines():
                 ex = json.loads(l)
-                if hasattr(args, "focused_repo") and args.focused_repo and args.focused_repo not in re.sub('/', '_', ex['metadata']['repository']):
+                if (
+                    hasattr(args, "focused_repo")
+                    and args.focused_repo
+                    and args.focused_repo
+                    not in re.sub("/", "_", ex["metadata"]["repository"])
+                ):
                     continue
                 examples[ex["metadata"]["task_id"]] = {
                     "task_id": ex["metadata"]["task_id"],
                     "prompt": ex["prompt"],
-                    "groundtruth": ex["groundtruth"]
+                    "groundtruth": ex["groundtruth"],
                 }
 
         if len(samples) == len(examples):
-            print('Warning: len(samples) ({}) == len(examples) ({})'.format(len(samples), len(examples)))
+            print(
+                "Warning: len(samples) ({}) == len(examples) ({})".format(
+                    len(samples), len(examples)
+                )
+            )
 
         global parser
         ts_lang = language
-        if ts_lang == 'csharp':
-            ts_lang = 'c_sharp'
+        if ts_lang == "csharp":
+            ts_lang = "c_sharp"
 
-        ts_lib = args.ts_lib.replace('LANGUAGE', language)
+        ts_lib = args.ts_lib.replace("LANGUAGE", language)
         language_ts = Language(ts_lib, ts_lang)
         parser = Parser()
         parser.set_language(language_ts)
@@ -381,14 +421,18 @@ def compute_metric_stmt_multilang(args):
         worker = partial(process_examples, args.task)
 
         with tqdm(total=len(samples)) as pbar:
-            for trunc_s in pool.imap_unordered(worker, zip(samples, [examples[s["task_id"]] for s in samples])):
+            for trunc_s in pool.imap_unordered(
+                worker, zip(samples, [examples[s["task_id"]] for s in samples])
+            ):
                 truncated_samples.append(trunc_s)
                 pbar.update()
 
         pool.close()
         pool.join()
 
-        task_output_dir = os.path.join(args.output_dir, args.dataset, language, args.task)
+        task_output_dir = os.path.join(
+            args.output_dir, args.dataset, language, args.task
+        )
         # with open(f"{task_output_dir}/prediction_truncated.jsonl", 'w', encoding="utf-8") as pt:
         #     for trunc_s in truncated_samples:
         #         pt.write(json.dumps(trunc_s) + "\n")
@@ -407,14 +451,16 @@ def compute_metric_stmt_multilang(args):
             edit_sim_repoeval += es_repoeval
             exact_match += em
 
-            detailed_results.append({
-                "task_id": trunc_s["task_id"],
-                "pred": trunc_s["pred"],
-                "target": trunc_s["target"],
-                "em": em,
-                "es": es,
-                "es_repoeval": es_repoeval
-            })
+            detailed_results.append(
+                {
+                    "task_id": trunc_s["task_id"],
+                    "pred": trunc_s["pred"],
+                    "target": trunc_s["target"],
+                    "em": em,
+                    "es": es,
+                    "es_repoeval": es_repoeval,
+                }
+            )
 
         total_samples = len(truncated_samples)
         em_ratio = round(exact_match / total_samples * 100, 2)
@@ -429,7 +475,7 @@ def compute_metric_stmt_multilang(args):
         )
 
         # 保存详细结果
-        with open(f"{task_output_dir}/detailed_results.json", 'w') as f:
+        with open(f"{task_output_dir}/detailed_results.json", "w") as f:
             for dr in detailed_results:
                 f.write(json.dumps(dr) + "\n")
 
@@ -438,20 +484,29 @@ def compute_metric_stmt_multilang(args):
             "em": em_ratio,
             "es": edit_sim_avg,
             "es_repoeval": edit_sim_repoeval_avg,
-            "total": total_samples
+            "total": total_samples,
         }
-        
-        with open(f"{task_output_dir}/results.json", 'w') as f:
+
+        with open(f"{task_output_dir}/results.json", "w") as f:
             json.dump(task_results, f, indent=2)
-            
+
         # 将当前任务的结果添加到总结果字典中
         all_task_results[language] = task_results
 
     # 计算所有任务的加权平均值
     total_samples = sum(res["total"] for res in all_task_results.values())
-    weighted_em = sum(res["em"] * res["total"] for res in all_task_results.values()) / total_samples
-    weighted_es = sum(res["es"] * res["total"] for res in all_task_results.values()) / total_samples
-    weighted_es_repoeval = sum(res["es_repoeval"] * res["total"] for res in all_task_results.values()) / total_samples
+    weighted_em = (
+        sum(res["em"] * res["total"] for res in all_task_results.values())
+        / total_samples
+    )
+    weighted_es = (
+        sum(res["es"] * res["total"] for res in all_task_results.values())
+        / total_samples
+    )
+    weighted_es_repoeval = (
+        sum(res["es_repoeval"] * res["total"] for res in all_task_results.values())
+        / total_samples
+    )
 
     # 创建最终的合并结果
     merged_results = {
@@ -459,13 +514,13 @@ def compute_metric_stmt_multilang(args):
             "em": round(weighted_em, 4),
             "es": round(weighted_es, 4),
             "es_repoeval": round(weighted_es_repoeval, 4),
-            "total": total_samples
+            "total": total_samples,
         },
-        "per_language": all_task_results
+        "per_language": all_task_results,
     }
 
     # 保存合并后的结果
-    with open(f"{args.output_dir}/{args.dataset}/results.json", 'w') as f:
+    with open(f"{args.output_dir}/{args.dataset}/results.json", "w") as f:
         json.dump(merged_results, f, indent=2)
 
     print("\nOverall Results (Weighted Average):")
@@ -475,49 +530,68 @@ def compute_metric_stmt_multilang(args):
     print(f"Total Samples: {total_samples}")
 
 
-def compute_metric_stmt_custom(predictions_file, prompt_file, output_dir, 
-                               ts_lib, task, focused_repo=None, anchor_file=None, out_f_suffix=""):
+def compute_metric_stmt_custom(
+    predictions_file,
+    prompt_file,
+    output_dir,
+    ts_lib,
+    task,
+    focused_repo=None,
+    anchor_file=None,
+    out_f_suffix="",
+):
     eval_ids = set()
 
     if anchor_file:
         with open(anchor_file, "r") as f_pred:
             for l in f_pred.readlines():
-                eval_ids.add(json.loads(l)['task_id'])
+                eval_ids.add(json.loads(l)["task_id"])
 
     with open(predictions_file, "r") as f_pred:
         samples = []
         for l in f_pred.readlines():
             if anchor_file:
-                if json.loads(l)['task_id'] in eval_ids:
+                if json.loads(l)["task_id"] in eval_ids:
                     samples.append(json.loads(l))
             else:
                 entry = json.loads(l)
                 # entry['task_id'] = re.sub('-', '_',entry['task_id'])
-                if entry['task_id'] in eval_ids:
+                if entry["task_id"] in eval_ids:
                     continue
                 if focused_repo is not None:
-                    if type(focused_repo) == str and focused_repo not in re.sub('/', '_', entry['task_id']):
+                    if type(focused_repo) == str and focused_repo not in re.sub(
+                        "/", "_", entry["task_id"]
+                    ):
                         continue
-                    elif type(focused_repo) == list and not any([x in re.sub('/', '_', entry['task_id']) for x in focused_repo]):
+                    elif type(focused_repo) == list and not any(
+                        [x in re.sub("/", "_", entry["task_id"]) for x in focused_repo]
+                    ):
                         continue
                 samples.append(entry)
-                eval_ids.add(entry['task_id'])
+                eval_ids.add(entry["task_id"])
 
     examples = {}
     with open(prompt_file, "r") as f_in:
         for l in f_in.readlines():
             ex = json.loads(l)
             if focused_repo is not None:
-                if type(focused_repo) == str and focused_repo not in re.sub('/', '_', ex['metadata']['repository']):
+                if type(focused_repo) == str and focused_repo not in re.sub(
+                    "/", "_", ex["metadata"]["repository"]
+                ):
                     continue
-                elif type(focused_repo) == list and not any([x in re.sub('/', '_', ex['metadata']['repository']) for x in focused_repo]):
+                elif type(focused_repo) == list and not any(
+                    [
+                        x in re.sub("/", "_", ex["metadata"]["repository"])
+                        for x in focused_repo
+                    ]
+                ):
                     continue
             if ex["metadata"]["task_id"] not in eval_ids:
                 continue
             examples[ex["metadata"]["task_id"]] = {
                 "task_id": ex["metadata"]["task_id"],
                 "prompt": ex["prompt"],
-                "groundtruth": ex["groundtruth"]
+                "groundtruth": ex["groundtruth"],
             }
 
     assert len(samples) == len(examples), f"{len(samples)} != {len(examples)}"
@@ -533,11 +607,15 @@ def compute_metric_stmt_custom(predictions_file, prompt_file, output_dir,
     worker = partial(process_examples, task)
 
     with tqdm(total=len(samples)) as pbar:
-        for trunc_s in pool.imap_unordered(worker, zip(samples, [examples[s["task_id"]] for s in samples])):
+        for trunc_s in pool.imap_unordered(
+            worker, zip(samples, [examples[s["task_id"]] for s in samples])
+        ):
             truncated_samples.append(trunc_s)
             pbar.update()
 
-    with open(f"{output_dir}/prediction_truncated{out_f_suffix}.jsonl", 'w', encoding="utf-8") as pt:
+    with open(
+        f"{output_dir}/prediction_truncated{out_f_suffix}.jsonl", "w", encoding="utf-8"
+    ) as pt:
         for trunc_s in truncated_samples:
             pt.write(json.dumps(trunc_s) + "\n")
 
@@ -556,12 +634,14 @@ def compute_metric_stmt_custom(predictions_file, prompt_file, output_dir,
         edit_sim_repoeval += es_repoeval
         exact_match += em
 
-        detailed_results.append({
-            "task_id": trunc_s["task_id"],
-            "em": em,
-            "es": es,
-            "es_repoeval": es_repoeval
-        })
+        detailed_results.append(
+            {
+                "task_id": trunc_s["task_id"],
+                "em": em,
+                "es": es,
+                "es_repoeval": es_repoeval,
+            }
+        )
 
     em_ratio = round(exact_match / len(truncated_samples) * 100, 2)
     edit_sim = round(edit_sim / len(truncated_samples), 2)
@@ -574,23 +654,24 @@ def compute_metric_stmt_custom(predictions_file, prompt_file, output_dir,
         f"ES RepoEval {edit_sim_repoeval:.2f}"
     )
 
-    with open(f"{output_dir}/detailed_results{out_f_suffix}.json", 'w') as f:
+    with open(f"{output_dir}/detailed_results{out_f_suffix}.json", "w") as f:
         for dr in detailed_results:
             f.write(json.dumps(dr) + "\n")
 
     # write the results to a file
-    with open(f"{output_dir}/results{out_f_suffix}.json", 'w') as f:
+    with open(f"{output_dir}/results{out_f_suffix}.json", "w") as f:
         res = {
             "em": em_ratio,
             "es": edit_sim,
             "es_repoeval": edit_sim_repoeval,
-            "total": len(truncated_samples)
+            "total": len(truncated_samples),
         }
         f.write(json.dumps(res, indent=2))
 
+
 def extract_block(text: str) -> str:
     """提取文本中代码块的内容"""
-    start = text.find('```') + 3
-    end = text.find('```', start)
+    start = text.find("```") + 3
+    end = text.find("```", start)
     content = text[start:end]
     return content

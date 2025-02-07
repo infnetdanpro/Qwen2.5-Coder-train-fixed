@@ -1,14 +1,17 @@
+import gc
 import json
 import re
 import subprocess
 from os import PathLike
 from pathlib import Path
 from typing import List
-from vllm.distributed.parallel_state import destroy_distributed_environment, destroy_model_parallel
-import torch
-import gc
 
+import torch
 from model import DecoderBase, make_model
+from vllm.distributed.parallel_state import (
+    destroy_distributed_environment,
+    destroy_model_parallel,
+)
 
 
 def codegen(
@@ -43,7 +46,9 @@ def codegen(
     with Path(target_file).open("w") as f:
         print(f"Saving ... => {target_file}")
         for task_id, prompt, completion in zip(task_ids, prompts, outputs):
-            solution = prompt + completion if model.is_direct_completion() else completion
+            solution = (
+                prompt + completion if model.is_direct_completion() else completion
+            )
             d = {
                 "task_id": task_id,
                 "completion": solution,
@@ -56,7 +61,9 @@ def codegen(
 def extract_scores(output):
     pattern = r"([\w+]+) \(.+?\)\n(pass@.+?).+?(0.\d+)"
     matches = re.findall(pattern, output)
-    result = {name: {pass_k: round(float(score) * 100, 2)} for name, pass_k, score in matches}
+    result = {
+        name: {pass_k: round(float(score) * 100, 2)} for name, pass_k, score in matches
+    }
     return result
 
 

@@ -4,10 +4,6 @@ import os
 import pathlib
 from typing import Dict, Generator, List, Optional, Set, Tuple
 
-from tqdm import tqdm
-from tree_sitter import Node
-from tree_sitter_languages import get_parser
-
 from data import (
     get_bigcodebench,
     load_solutions,
@@ -15,6 +11,9 @@ from data import (
     write_jsonl,
 )
 from syncheck import syntax_check
+from tqdm import tqdm
+from tree_sitter import Node
+from tree_sitter_languages import get_parser
 
 CLASS_TYPE = "class_definition"
 FUNCTION_TYPE = "function_definition"
@@ -162,9 +161,9 @@ def sanitize(code: str, entrypoint: Optional[str] = None) -> str:
         if entrypoint and not (name in reacheable):
             continue
         sanitized_output += code_bytes[node.start_byte : node.end_byte] + b"\n"
-        
+
     sanitized_output = sanitized_output[:-1].decode("utf8")
-    
+
     # ad-hoc approach to remove unnecessary lines, but it works
     lines = sanitized_output.splitlines()
     outer_lines = []
@@ -200,7 +199,9 @@ def script(
                 new_name = target_path.name + "-sanitized"
         else:
             if calibrate:
-                new_name = target_path.name.replace(".jsonl", "-sanitized-calibrated.jsonl")
+                new_name = target_path.name.replace(
+                    ".jsonl", "-sanitized-calibrated.jsonl"
+                )
             else:
                 new_name = target_path.name.replace(".jsonl", "-sanitized.jsonl")
         target_path = target_path.parent / new_name
@@ -228,10 +229,15 @@ def script(
         if "solution" in solution:
             old_code = solution["solution"]
             if calibrate:
-                old_code = solution["solution"].replace("```python\n    ", "```python\n"+dataset[task_id]["complete_prompt"]+"    ")
+                old_code = solution["solution"].replace(
+                    "```python\n    ",
+                    "```python\n" + dataset[task_id]["complete_prompt"] + "    ",
+                )
         else:
             assert "completion" in solution
-            old_code = dataset[task_id]["complete_prompt"] + "\n" + solution["completion"]
+            old_code = (
+                dataset[task_id]["complete_prompt"] + "\n" + solution["completion"]
+            )
 
         new_code = sanitize(code=old_code, entrypoint=function_name)
         # if changed, print the message

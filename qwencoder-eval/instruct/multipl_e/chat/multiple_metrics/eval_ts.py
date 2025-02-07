@@ -1,5 +1,6 @@
-from pathlib import Path
 import subprocess
+from pathlib import Path
+
 from .safe_subprocess import run
 
 
@@ -7,7 +8,7 @@ def eval_script(path: Path):
     """
     npm install -g typescript
     """
-    #try:
+    # try:
     r = run(["tsc", "--target", "esnext", str(path)], timeout_seconds=15)
     # except:
     #     subprocess.run("npm install -g typescript")

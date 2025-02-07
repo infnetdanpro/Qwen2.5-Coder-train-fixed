@@ -1,6 +1,6 @@
+import json
 import os
 import re
-import json
 
 
 def extract_vimscript_code(text, item):
@@ -19,7 +19,9 @@ def extract_vimscript_code(text, item):
             flags=re.DOTALL,
         )
     if code_block is None:
-        code_block = re.search(rf"({signature_escaped}.*|function.*{entry_point}.*)", text, flags=re.DOTALL)
+        code_block = re.search(
+            rf"({signature_escaped}.*|function.*{entry_point}.*)", text, flags=re.DOTALL
+        )
     if code_block is None:
         # 如果没有找到代码块，尝试匹配整个文本
         code = text

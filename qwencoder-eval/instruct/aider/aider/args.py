@@ -5,7 +5,6 @@ import os
 import sys
 
 import configargparse
-
 from aider import __version__
 from aider.args_formatter import (
     DotEnvFormatter,
@@ -247,10 +246,14 @@ def get_parser(default_config_files, git_root):
     ##########
     group = parser.add_argument_group("History Files")
     default_input_history_file = (
-        os.path.join(git_root, ".aider.input.history") if git_root else ".aider.input.history"
+        os.path.join(git_root, ".aider.input.history")
+        if git_root
+        else ".aider.input.history"
     )
     default_chat_history_file = (
-        os.path.join(git_root, ".aider.chat.history.md") if git_root else ".aider.chat.history.md"
+        os.path.join(git_root, ".aider.chat.history.md")
+        if git_root
+        else ".aider.chat.history.md"
     )
     group.add_argument(
         "--input-history-file",

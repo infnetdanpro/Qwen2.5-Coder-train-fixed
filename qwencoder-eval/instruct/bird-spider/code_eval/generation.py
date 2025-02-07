@@ -1,17 +1,15 @@
-import json
 import asyncio
+import json
 import random
-
 from math import ceil
-from openai import AsyncOpenAI
-from tqdm import tqdm
-from tqdm.asyncio import tqdm_asyncio
 
 from accelerate.utils import set_seed
+from code_eval.utils import ChatTokenizedDataset, TokenizedDataset, complete_code
+from openai import AsyncOpenAI
 from torch.utils.data.dataloader import DataLoader
+from tqdm import tqdm
+from tqdm.asyncio import tqdm_asyncio
 from transformers import StoppingCriteria, StoppingCriteriaList
-
-from code_eval.utils import TokenizedDataset, ChatTokenizedDataset, complete_code
 
 
 class EndOfFunctionCriteria(StoppingCriteria):
@@ -22,13 +20,22 @@ class EndOfFunctionCriteria(StoppingCriteria):
         self.eof_strings = eof_strings
         self.tokenizer = tokenizer
         if check_fn is None:
-            check_fn = lambda decoded_generation: any([stop_string in decoded_generation for stop_string in self.eof_strings])
+            check_fn = lambda decoded_generation: any(
+                [stop_string in decoded_generation for stop_string in self.eof_strings]
+            )
         self.check_fn = check_fn
 
     def __call__(self, input_ids, scores, **kwargs):
         """Returns true if all generated sequences contain any of the end-of-function strings."""
-        decoded_generations = self.tokenizer.batch_decode(input_ids[:, self.start_length:])
-        return all([self.check_fn(decoded_generation) for decoded_generation in decoded_generations])
+        decoded_generations = self.tokenizer.batch_decode(
+            input_ids[:, self.start_length :]
+        )
+        return all(
+            [
+                self.check_fn(decoded_generation)
+                for decoded_generation in decoded_generations
+            ]
+        )
 
 
 class TooLongFunctionCriteria(StoppingCriteria):
@@ -49,7 +56,9 @@ def parallel_generations(task, dataset, accelerator, model, tokenizer, n_tasks, 
         with open(args.load_generations_path) as fp:
             generations = json.load(fp)
             if accelerator.is_main_process:
-                print(f"generations loaded, {n_tasks} selected from {len(generations)} with {len(generations[0])} candidates")
+                print(
+                    f"generations loaded, {n_tasks} selected from {len(generations)} with {len(generations[0])} candidates"
+                )
         return generations[:n_tasks]
 
     set_seed(args.seed, device_specific=True)
@@ -71,7 +80,9 @@ def parallel_generations(task, dataset, accelerator, model, tokenizer, n_tasks, 
     if task.stop_words and tokenizer.eos_token:
         task.stop_words.append(tokenizer.eos_token)
     if hasattr(task, "check_fn"):
-        stopping_criteria.append(EndOfFunctionCriteria(0, task.stop_words, tokenizer, task.check_fn))
+        stopping_criteria.append(
+            EndOfFunctionCriteria(0, task.stop_words, tokenizer, task.check_fn)
+        )
     elif task.stop_words:
         stopping_criteria.append(EndOfFunctionCriteria(0, task.stop_words, tokenizer))
     if hasattr(task, "max_length_multiplier") and task.max_length_multiplier:
@@ -83,7 +94,9 @@ def parallel_generations(task, dataset, accelerator, model, tokenizer, n_tasks, 
     if args.instruction_tokens:
         instruction_tokens = args.instruction_tokens.split(",")
         if len(instruction_tokens) != 3:
-            raise ValueError("Instruction tokens should contain exactly 3 tokens separated by a comma. If a token is empty, represent it as ''")
+            raise ValueError(
+                "Instruction tokens should contain exactly 3 tokens separated by a comma. If a token is empty, represent it as ''"
+            )
         for token in instruction_tokens:
             if token.strip() != "":
                 task.stop_words.append(token)
@@ -184,11 +197,13 @@ def vllm_generation(task, dataset, model, tokenizer, n_tasks, args):
 
     chat_prompts = []
     for prompt in prompts:
-        chat_prompts.append(tokenizer.apply_chat_template(
-            prompt,
-            tokenize=False,
-            add_generation_prompt=True,
-        ))
+        chat_prompts.append(
+            tokenizer.apply_chat_template(
+                prompt,
+                tokenize=False,
+                add_generation_prompt=True,
+            )
+        )
 
     print("Chat prompts:")
     print(chat_prompts[0])
@@ -205,7 +220,9 @@ def vllm_generation(task, dataset, model, tokenizer, n_tasks, args):
     )
 
     raw_generations = [x.outputs[0].text for x in vllm_outputs]
-    gen_strs = [task.postprocess_generation(x, id) for id, x in enumerate(raw_generations)]
+    gen_strs = [
+        task.postprocess_generation(x, id) for id, x in enumerate(raw_generations)
+    ]
     generations = [[gen_strs[i]] for i in range(len(gen_strs))]
 
     print("Raw Generations:")
@@ -217,7 +234,9 @@ def vllm_generation(task, dataset, model, tokenizer, n_tasks, args):
     return generations
 
 
-async def openai_generation(task, dataset, model: AsyncOpenAI, tokenizer, n_tasks, args):
+async def openai_generation(
+    task, dataset, model: AsyncOpenAI, tokenizer, n_tasks, args
+):
     prompts = []
     for i in range(len(dataset)):
         prompt_contents = task.get_prompt(dataset[i])
@@ -252,7 +271,9 @@ async def openai_generation(task, dataset, model: AsyncOpenAI, tokenizer, n_task
         async_responses.append(gen)
     raw_generations = await tqdm_asyncio.gather(*async_responses)
 
-    gen_strs = [task.postprocess_generation(x, id) for id, x in enumerate(raw_generations)]
+    gen_strs = [
+        task.postprocess_generation(x, id) for id, x in enumerate(raw_generations)
+    ]
     generations = [[gen_strs[i]] for i in range(len(gen_strs))]
 
     print("Raw Generations:")

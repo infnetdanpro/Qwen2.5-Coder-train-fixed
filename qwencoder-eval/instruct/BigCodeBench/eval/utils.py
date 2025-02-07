@@ -23,15 +23,16 @@
 import contextlib
 import faulthandler
 import io
+import multiprocessing
 import os
 import platform
 import signal
-import tempfile
 import subprocess
-import multiprocessing
+import tempfile
 from typing import Optional
 
-TIMEOUT_LIMIT=240.0
+TIMEOUT_LIMIT = 240.0
+
 
 @contextlib.contextmanager
 def swallow_subprocess_output():
@@ -40,23 +41,23 @@ def swallow_subprocess_output():
     original_run = subprocess.run
 
     def _popen_patch(*args, **kwargs):
-        if 'capture_output' in kwargs and kwargs['capture_output']:
+        if "capture_output" in kwargs and kwargs["capture_output"]:
             # Avoid setting stdout or stderr if capture_output is True
-            kwargs.pop('stdout', None)
-            kwargs.pop('stderr', None)
+            kwargs.pop("stdout", None)
+            kwargs.pop("stderr", None)
         else:
-            kwargs.setdefault('stdout', subprocess.PIPE)
-            kwargs.setdefault('stderr', subprocess.PIPE)
+            kwargs.setdefault("stdout", subprocess.PIPE)
+            kwargs.setdefault("stderr", subprocess.PIPE)
         return original_popen(*args, **kwargs)
 
     def _run_patch(*args, **kwargs):
-        if 'capture_output' in kwargs and kwargs['capture_output']:
+        if "capture_output" in kwargs and kwargs["capture_output"]:
             # Avoid setting stdout or stderr if capture_output is True
-            kwargs.pop('stdout', None)
-            kwargs.pop('stderr', None)
+            kwargs.pop("stdout", None)
+            kwargs.pop("stderr", None)
         else:
-            kwargs.setdefault('stdout', subprocess.PIPE)
-            kwargs.setdefault('stderr', subprocess.PIPE)
+            kwargs.setdefault("stdout", subprocess.PIPE)
+            kwargs.setdefault("stderr", subprocess.PIPE)
         return original_run(*args, **kwargs)
 
     subprocess.Popen = _popen_patch
@@ -66,6 +67,7 @@ def swallow_subprocess_output():
     finally:
         subprocess.Popen = original_popen
         subprocess.run = original_run
+
 
 @contextlib.contextmanager
 def swallow_io():
@@ -152,32 +154,34 @@ def safe_environment():
 
     def safe_system(command):
         print(f"Intercepted system command: {command}")
-        if 'kill' in command or 'killall' in command:
+        if "kill" in command or "killall" in command:
             return 0  # Simulate successful execution without doing anything
         return original_system(command)
 
     def safe_subprocess_call(command, *args, **kwargs):
         print(f"Intercepted subprocess call: {command}")
-        if 'kill' in command or 'killall' in command:
+        if "kill" in command or "killall" in command:
             return 0  # Simulate successful execution without doing anything
         return original_subprocess_call(command, *args, **kwargs)
 
     def safe_subprocess_check_output(command, *args, **kwargs):
         print(f"Intercepted command: {command}")
-        if 'ps' in command:
+        if "ps" in command:
             return b""  # Simulate no processes found
         return original_subprocess_check_output(command, *args, **kwargs)
 
     def safe_subprocess_run(*args, **kwargs):
         print(f"Intercepted subprocess run command: {args}")
-        if 'kill' in args[0] or 'killall' in args[0]:
-            return subprocess.CompletedProcess(args, 0, b'', b'')  # Simulate successful execution
+        if "kill" in args[0] or "killall" in args[0]:
+            return subprocess.CompletedProcess(
+                args, 0, b"", b""
+            )  # Simulate successful execution
         return original_subprocess_run(*args, **kwargs)
 
     class SafePopen(subprocess.Popen):
         def __init__(self, *args, **kwargs):
             print(f"Intercepted Popen command: {args}")
-            kwargs['preexec_fn'] = os.setsid  # Start the process in a new session
+            kwargs["preexec_fn"] = os.setsid  # Start the process in a new session
             super().__init__(*args, **kwargs)
             child_pids.append(self.pid)
 
@@ -198,8 +202,8 @@ def safe_environment():
 
     def safe_os_popen(command):
         print(f"Intercepted os.popen command: {command}")
-        if 'kill' in command or 'killall' in command:
-            return os.popen('echo Intercepted')
+        if "kill" in command or "killall" in command:
+            return os.popen("echo Intercepted")
         return original_os_popen(command)
 
     def safe_exec(*args, **kwargs):
@@ -272,31 +276,27 @@ def reliability_guard(max_as_limit, max_data_limit, max_stack_limit):
     Codex paper for more information about OpenAI's code sandbox, and proceed
     with caution.
     """
-    
+
     import os
     import time
     from datetime import datetime
 
-    os.environ['TZ'] = 'UTC'
+    os.environ["TZ"] = "UTC"
     time.tzset()
-    
+
     os.environ["OMP_NUM_THREADS"] = "1"
-    os.environ['TF_CPP_MIN_LOG_LEVEL'] = "3" 
-    os.environ['TF_ENABLE_ONEDNN_OPTS'] = "0"
-    
+    os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
+    os.environ["TF_ENABLE_ONEDNN_OPTS"] = "0"
+
     if max_as_limit and max_data_limit and max_stack_limit:
         import resource
-        
+
         max_as_limit = max_as_limit * 1024 * 1024
         max_data_limit = max_data_limit * 1024 * 1024
         max_stack_limit = max_stack_limit * 1024 * 1024
-        
-        resource.setrlimit(
-            resource.RLIMIT_AS, (max_as_limit, max_as_limit)
-        )
-        resource.setrlimit(
-            resource.RLIMIT_DATA, (max_data_limit, max_data_limit)
-        )
+
+        resource.setrlimit(resource.RLIMIT_AS, (max_as_limit, max_as_limit))
+        resource.setrlimit(resource.RLIMIT_DATA, (max_data_limit, max_data_limit))
         if not platform.uname().system == "Darwin":
             resource.setrlimit(
                 resource.RLIMIT_STACK, (max_stack_limit, max_stack_limit)
@@ -310,4 +310,5 @@ def reliability_guard(max_as_limit, max_data_limit, max_stack_limit):
     builtins.quit = None
 
     import matplotlib.pyplot as plt
-    plt.close('all')
+
+    plt.close("all")

@@ -1,7 +1,6 @@
 import os
 
 import pytest
-
 from aider.special import filter_important_files, is_important
 
 

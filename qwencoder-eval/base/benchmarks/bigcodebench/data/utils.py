@@ -11,7 +11,7 @@ from appdirs import user_cache_dir
 CACHE_DIR = user_cache_dir("bigcodebench")
 
 
-def get_dataset_metadata(version: str, subset: str="full"):
+def get_dataset_metadata(version: str, subset: str = "full"):
     extra = "-" + subset.capitalize() if subset != "full" else ""
     url = f"https://github.com/bigcode-project/bigcodebench-annotation/releases/download/{version}/BigCodeBench{extra}.jsonl.gz"
     cache_path = os.path.join(CACHE_DIR, f"BigCodeBench{extra}-{version}.jsonl")
@@ -20,7 +20,7 @@ def get_dataset_metadata(version: str, subset: str="full"):
 
 def make_cache(gzip_url, hf_data, cache_path, gh=False):
     # Check if open eval file exists in CACHE_DIR
-    
+
     if not os.path.exists(cache_path):
         if gh:
             # Install BigCodeBench dataset and parse as jsonl
@@ -155,7 +155,7 @@ def completeness_check(name, data):
             "canonical_solution",
             "code_prompt",
             "test",
-            "entry_point"
+            "entry_point",
         ]:
             assert key in task, f"{key} not found in {name} #{task_id}!"
 

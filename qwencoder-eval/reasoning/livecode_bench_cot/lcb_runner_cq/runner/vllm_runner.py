@@ -3,9 +3,10 @@ try:
 except ImportError:
     print("Cannot import vllm")
 
-from lcb_runner_cq.runner.base_runner import BaseRunner
-import time
 import random
+import time
+
+from lcb_runner_cq.runner.base_runner import BaseRunner
 
 
 class VLLMRunner(BaseRunner):

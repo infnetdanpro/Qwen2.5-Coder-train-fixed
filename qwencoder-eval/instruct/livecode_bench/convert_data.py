@@ -1,18 +1,23 @@
 import json
-import datasets
 import os
-from enum import Enum
-from datetime import datetime
 from dataclasses import dataclass
+from datetime import datetime
+from enum import Enum
+
+import datasets
 import jsonlines
-import tqdm
 import numpy as np
+import tqdm
+
+
 class PromptConstants:
     SYSTEM_MESSAGE_GENERIC = f"You are an expert Python programmer. You will be given a question (problem specification) and will generate a correct Python program that matches the specification and passes all tests. You will NOT return anything except for the program."
 
     SYSTEM_MESSAGE_DEEPSEEK = f"You are an AI programming assistant, utilizing the DeepSeek Coder model, developed by DeepSeek Company, and you answer questions related to computer science."
 
-    SYSTEM_MESSAGE_CODEQWEN = f"<|im_start|>system\nYou are a helpful assistant.<|im_end|>\n<|im_start|>user"
+    SYSTEM_MESSAGE_CODEQWEN = (
+        f"<|im_start|>system\nYou are a helpful assistant.<|im_end|>\n<|im_start|>user"
+    )
 
     SYSTEM_MESSAGE_MAGIC = f"You are an exceptionally intelligent coding assistant that consistently delivers accurate and reliable responses to user instructions.\n\n@@ Instruction\n"
 
@@ -26,6 +31,7 @@ class PromptConstants:
     FORMATTING_MESSAGE_WITH_STARTER_CODE = "You will use the following starter code to write the solution to the problem and enclose your code within delimiters."
 
     FORMATTING_WITHOUT_STARTER_CODE = "Read the inputs from stdin solve the problem and write the answer to stdout (do not directly test on the sample inputs). Enclose your code within delimiters as follows."
+
 
 class Platform(Enum):
     LEETCODE = "leetcode"
@@ -43,6 +49,7 @@ class TestType(Enum):
     STDIN = "stdin"
     FUNCTIONAL = "functional"
 
+
 @dataclass
 class Test:
     input: str
@@ -51,7 +58,8 @@ class Test:
 
     def __post_init__(self):
         self.testtype = TestType(self.testtype)
-        
+
+
 @dataclass
 class CodeGenerationProblem:
     question_title: str
@@ -102,20 +110,19 @@ class CodeGenerationProblem:
 
     def get_evaluation_sample(self):
         return {
-            "input_output":
-                json.dumps(
-                    {
-                        "inputs": [
-                            t.input
-                            for t in self.public_test_cases + self.private_test_cases
-                        ],
-                        "outputs": [
-                            t.output
-                            for t in self.public_test_cases + self.private_test_cases
-                        ],
-                        "fn_name": self.metadata.get("func_name", None),
-                    }
-                )
+            "input_output": json.dumps(
+                {
+                    "inputs": [
+                        t.input
+                        for t in self.public_test_cases + self.private_test_cases
+                    ],
+                    "outputs": [
+                        t.output
+                        for t in self.public_test_cases + self.private_test_cases
+                    ],
+                    "fn_name": self.metadata.get("func_name", None),
+                }
+            )
         }
 
 
@@ -124,14 +131,10 @@ def convert_file(source_path, target_path):
         prompt = "You will be given a question (problem specification) and will generate a correct Python program that matches the specification and passes all tests. You will NOT return anything except for the program.\n\n"
         prompt += f"Question: {question.question_content}\n\n"
         if question.starter_code:
-            prompt += (
-                f"{PromptConstants.FORMATTING_MESSAGE_WITH_STARTER_CODE}\n"
-            )
+            prompt += f"{PromptConstants.FORMATTING_MESSAGE_WITH_STARTER_CODE}\n"
             prompt += f"```python\n{question.starter_code}\n```\n\n"
         else:
-            prompt += (
-                f"{PromptConstants.FORMATTING_WITHOUT_STARTER_CODE}\n"
-            )
+            prompt += f"{PromptConstants.FORMATTING_WITHOUT_STARTER_CODE}\n"
             prompt += f"```python\n# YOUR CODE HERE\n```\n\n"
         return prompt
 
@@ -148,22 +151,22 @@ def convert_file(source_path, target_path):
             "eval_args": {
                 "greedy": False,
                 "seed": 1234,
-                "out_seq_length": 1200,		                             
+                "out_seq_length": 1200,
                 "repetition_penalty": 1.0,
                 "temperature": 0.2,
-                #"beam_size": 10,
-                #"presence_penalty": 2.0,
-                #"system_str": "你是一个专业的数学家，擅长解答数学问题。",  
+                # "beam_size": 10,
+                # "presence_penalty": 2.0,
+                # "system_str": "你是一个专业的数学家，擅长解答数学问题。",
                 "top_k": -1,
                 "top_p": 0.95,
-            }
+            },
         }
         return data
 
     if not os.path.exists(os.path.dirname(target_path)):
         os.makedirs(os.path.dirname(target_path))
 
-    with jsonlines.open(target_path, 'w') as w:
+    with jsonlines.open(target_path, "w") as w:
         dataset = datasets.load_dataset(source_path)["test"]
         dataset = [CodeGenerationProblem(**p) for p in dataset]
         for i, sample in tqdm.tqdm(enumerate(dataset)):
@@ -172,9 +175,8 @@ def convert_file(source_path, target_path):
             n_sampling = 1
             for _ in range(n_sampling):
                 w.write(new_data)
-    
 
-    with jsonlines.open(target_path + ".sampled", 'w') as w:
+    with jsonlines.open(target_path + ".sampled", "w") as w:
         dataset = datasets.load_dataset(source_path)["test"]
         dataset = [CodeGenerationProblem(**p) for p in dataset][:5]
         for i, sample in tqdm.tqdm(enumerate(dataset)):
@@ -187,4 +189,3 @@ def convert_file(source_path, target_path):
 
 if __name__ == "__main__":
     convert_file("./data/livecodebench___code_generation", "./data/livecodebench.jsonl")
-

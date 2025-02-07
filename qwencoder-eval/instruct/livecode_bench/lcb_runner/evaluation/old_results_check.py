@@ -1,8 +1,8 @@
-import numpy as np
 import json
-from lcb_runner.benchmarks import load_generation_dataset, CodeGenerationProblem
-from lcb_runner.evaluation import codegen_metrics
 
+import numpy as np
+from lcb_runner.benchmarks import CodeGenerationProblem, load_generation_dataset
+from lcb_runner.evaluation import codegen_metrics
 
 dataset = load_generation_dataset()
 

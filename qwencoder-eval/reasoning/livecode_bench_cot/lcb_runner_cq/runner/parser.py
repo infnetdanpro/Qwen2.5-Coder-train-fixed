@@ -1,7 +1,7 @@
-import os
-import torch
 import argparse
+import os
 
+import torch
 from lcb_runner_cq.utils.scenarios import Scenario
 
 
@@ -31,8 +31,12 @@ def get_args():
         default=Scenario.codegeneration,
         help="Type of scenario to run",
     )
-    parser.add_argument("--n", type=int, default=10, help="Number of samples to generate")
-    parser.add_argument("--max_tokens", type=int, default=1200, help="Max tokens for sampling")
+    parser.add_argument(
+        "--n", type=int, default=10, help="Number of samples to generate"
+    )
+    parser.add_argument(
+        "--max_tokens", type=int, default=1200, help="Max tokens for sampling"
+    )
     parser.add_argument(
         "--multiprocess",
         default=0,
@@ -46,7 +50,9 @@ def get_args():
         help="Stop token (use `,` to separate multiple tokens)",
     )
     parser.add_argument("--continue_existing", action="store_true")
-    parser.add_argument("--use_cache", action="store_true", help="Use cache for generation")
+    parser.add_argument(
+        "--use_cache", action="store_true", help="Use cache for generation"
+    )
     parser.add_argument("--debug", action="store_true", help="Debug mode")
     parser.add_argument("--evaluate", action="store_true", help="Evaluate the results")
     parser.add_argument(
@@ -62,7 +68,9 @@ def get_args():
         help="Number of processes to use for evaluation",
     )
 
-    parser.add_argument("--timeout", type=int, default=18, help="Timeout for evaluation")
+    parser.add_argument(
+        "--timeout", type=int, default=18, help="Timeout for evaluation"
+    )
     parser.add_argument(
         "--tensor_parallel_size",
         type=int,
@@ -72,7 +80,9 @@ def get_args():
     parser.add_argument("--dtype", type=str, default="bfloat16", help="Dtype for vllm")
     parser.add_argument("--no_batching", default=False, action="store_true")
 
-    parser.add_argument("--temperature", type=float, default=0.0, help="Temperature for sampling")
+    parser.add_argument(
+        "--temperature", type=float, default=0.0, help="Temperature for sampling"
+    )
     parser.add_argument("--top_p", type=float, default=1, help="Top p for sampling")
     parser.add_argument("--top_k", type=int, default=-1, help="Top p for sampling")
     parser.add_argument("--rp", type=float, default=1.0)

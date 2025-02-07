@@ -2,10 +2,9 @@ import sys
 from pathlib import Path
 
 import matplotlib.pyplot as plt
+from aider.dump import dump  # noqa: F401
 from imgcat import imgcat
 from matplotlib import rc
-
-from aider.dump import dump  # noqa: F401
 
 
 def plot_swe_bench(data_file, is_lite):

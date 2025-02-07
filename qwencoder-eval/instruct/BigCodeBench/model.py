@@ -8,7 +8,6 @@ import openai
 
 try:
     import anthropic
-
     from bigcodebench.gen.util import anthropic_request
 except ImportError:
     warn("Anthropic decoder will not work. Fix by `pip install anthropic`")
@@ -73,14 +72,8 @@ Below is a Python script with a self-contained function that solves the problem 
 """
     prompt = tokenizer.apply_chat_template(
         [
-            {
-                "role": "user",
-                "content": prompt
-            },
-            {
-                "role": "assistant",
-                "content": response
-            },
+            {"role": "user", "content": prompt},
+            {"role": "assistant", "content": response},
         ],
         tokenize=False,
     ).split(_MAGIC_SPLITTER_)[0]
@@ -113,7 +106,9 @@ class DecoderBase(ABC):
         self.tokenizer_legacy = tokenizer_legacy
 
     @abstractmethod
-    def codegen(self, prompt: str, do_sample: bool = True, num_samples: int = 200) -> List[str]:
+    def codegen(
+        self, prompt: str, do_sample: bool = True, num_samples: int = 200
+    ) -> List[str]:
         pass
 
     @abstractmethod
@@ -138,12 +133,14 @@ class VllmDecoder(DecoderBase):
             "trust_remote_code": True,
             "enforce_eager": True,
             "gpu_memory_utilization": 0.95,
-            "worker_use_ray": True
+            "worker_use_ray": True,
         }
         if self.tokenizer_name is None:
             self.tokenizer_name = self.name
 
-        self.tokenizer = AutoTokenizer.from_pretrained(self.tokenizer_name, **kwargs, legacy=self.tokenizer_legacy)
+        self.tokenizer = AutoTokenizer.from_pretrained(
+            self.tokenizer_name, **kwargs, legacy=self.tokenizer_legacy
+        )
         if self.tokenizer.chat_template is None:
             self.eos += extra_eos_for_direct_completion(dataset)
         self.llm = LLM(model=name, max_model_len=2048, **kwargs)
@@ -152,7 +149,9 @@ class VllmDecoder(DecoderBase):
     def is_direct_completion(self) -> bool:
         return self.tokenizer.chat_template is None
 
-    def codegen(self, prompts: List[str], do_sample: bool = True, num_samples: int = 200) -> List[str]:
+    def codegen(
+        self, prompts: List[str], do_sample: bool = True, num_samples: int = 200
+    ) -> List[str]:
         if do_sample:
             assert self.temperature > 0, "Temperature must be greater than 0!"
 
@@ -178,7 +177,9 @@ class GeneralVllmDecoder(VllmDecoder):
         self.eos += ["\n```\n"]
         print(f"EOS strings: {self.eos}")
 
-    def codegen(self, prompts: List[str], do_sample: bool = True, num_samples: int = 200) -> List[str]:
+    def codegen(
+        self, prompts: List[str], do_sample: bool = True, num_samples: int = 200
+    ) -> List[str]:
         chat_prompts = [make_chat_prompt(prompt, self.tokenizer) for prompt in prompts]
         return VllmDecoder.codegen(self, chat_prompts, do_sample, num_samples)
 
@@ -200,7 +201,9 @@ class HfTorchDecoder(DecoderBase):
         if self.tokenizer_name is None:
             self.tokenizer_name = self.name
 
-        self.tokenizer = AutoTokenizer.from_pretrained(self.tokenizer_name, **kwargs, legacy=self.tokenizer_legacy)
+        self.tokenizer = AutoTokenizer.from_pretrained(
+            self.tokenizer_name, **kwargs, legacy=self.tokenizer_legacy
+        )
 
         if self.tokenizer.chat_template is None:
             self.eos += extra_eos_for_direct_completion(dataset)
@@ -212,12 +215,16 @@ class HfTorchDecoder(DecoderBase):
         return self.tokenizer.chat_template is None
 
     @torch.inference_mode()
-    def codegen(self, prompt: str, do_sample: bool = True, num_samples: int = 200) -> List[str]:
+    def codegen(
+        self, prompt: str, do_sample: bool = True, num_samples: int = 200
+    ) -> List[str]:
         if self.temperature == 0:
             assert not do_sample
             assert num_samples == 1
 
-        input_tokens = self.tokenizer.encode(prompt, return_tensors="pt").to(self.device)
+        input_tokens = self.tokenizer.encode(prompt, return_tensors="pt").to(
+            self.device
+        )
         kwargs = {}
         if do_sample:
             kwargs["top_p"] = 0.95
@@ -235,7 +242,7 @@ class HfTorchDecoder(DecoderBase):
         )
 
         gen_strs = self.tokenizer.batch_decode(
-            outputs[:, input_tokens.size(-1):],
+            outputs[:, input_tokens.size(-1) :],
             skip_special_tokens=self.skip_special_tokens,
         )
         outputs = []
@@ -255,9 +262,15 @@ class GenenralHfTorchDecoder(HfTorchDecoder):
         super().__init__(name=name, **kwargs)
         self.eos += ["\n```\n"]
         print(f"EOS strings: {self.eos}")
-        self.tokenizer = AutoTokenizer.from_pretrained(self.tokenizer_name if self.tokenizer_name else self.name, **kwargs, legacy=self.tokenizer_legacy)
+        self.tokenizer = AutoTokenizer.from_pretrained(
+            self.tokenizer_name if self.tokenizer_name else self.name,
+            **kwargs,
+            legacy=self.tokenizer_legacy,
+        )
 
-    def codegen(self, prompt: str, do_sample: bool = True, num_samples: int = 200) -> List[str]:
+    def codegen(
+        self, prompt: str, do_sample: bool = True, num_samples: int = 200
+    ) -> List[str]:
         prompt = make_chat_prompt(prompt, self.tokenizer)
         return HfTorchDecoder.codegen(self, prompt, do_sample, num_samples)
 
@@ -268,7 +281,9 @@ class OpenAIChatDecoder(DecoderBase):
         super().__init__(name, **kwargs)
         self.client = openai.OpenAI(base_url=base_url)
 
-    def codegen(self, prompt: str, do_sample: bool = True, num_samples: int = 200) -> List[str]:
+    def codegen(
+        self, prompt: str, do_sample: bool = True, num_samples: int = 200
+    ) -> List[str]:
         if do_sample:
             assert self.temperature > 0, "Temperature must be positive for sampling"
         batch_size = min(self.batch_size, num_samples)
@@ -320,7 +335,9 @@ class MistralChatDecoder(DecoderBase):
         super().__init__(name, **kwargs)
         self.client = MistralClient(api_key=os.getenv("MISTRAL_API_KEY"))
 
-    def codegen(self, prompt: str, do_sample: bool = True, num_samples: int = 200) -> List[str]:
+    def codegen(
+        self, prompt: str, do_sample: bool = True, num_samples: int = 200
+    ) -> List[str]:
         kwargs = {}
         if do_sample:
             assert self.temperature > 0, "Temperature must be positive for sampling"
@@ -335,10 +352,13 @@ class MistralChatDecoder(DecoderBase):
         for _ in range(batch_size):
             ret = self.client.chat(
                 model=self.name,
-                messages=[ChatMessage(
-                    role="user",
-                    content="Please generate self-contained code to solve the following problem in a Python markdown block:" + f"\n```python\n{prompt.strip()}\n```",
-                )],
+                messages=[
+                    ChatMessage(
+                        role="user",
+                        content="Please generate self-contained code to solve the following problem in a Python markdown block:"
+                        + f"\n```python\n{prompt.strip()}\n```",
+                    )
+                ],
                 max_tokens=self.max_new_tokens,
                 **kwargs,
             )
@@ -362,7 +382,9 @@ class AnthropicDecoder(DecoderBase, ABC):
 
 class AnthropicMessageDecoder(AnthropicDecoder):
 
-    def codegen(self, prompt: str, do_sample: bool = True, num_samples: int = 200) -> List[str]:
+    def codegen(
+        self, prompt: str, do_sample: bool = True, num_samples: int = 200
+    ) -> List[str]:
         kwargs = {}
         if do_sample:
             assert self.temperature > 0, "Temperature must be positive for sampling"
@@ -380,10 +402,13 @@ class AnthropicMessageDecoder(AnthropicDecoder):
             message = anthropic_request.make_auto_request(
                 client=self.client,
                 model=self.name,
-                messages=[{
-                    "role": "user",
-                    "content": "Please generate self-contained code to complete the following problem wrapped in a Python markdown block:" + f"\n```python\n{prompt.strip()}\n```\n",
-                }],
+                messages=[
+                    {
+                        "role": "user",
+                        "content": "Please generate self-contained code to complete the following problem wrapped in a Python markdown block:"
+                        + f"\n```python\n{prompt.strip()}\n```\n",
+                    }
+                ],
                 max_tokens=self.max_new_tokens,
                 stop_sequences=["\n```\n", "\nif "],
                 **kwargs,
@@ -397,7 +422,7 @@ class GoogleGenAIDecoder(DecoderBase, ABC):
 
     def __init__(self, name: str, **kwargs) -> None:
         super().__init__(name, **kwargs)
-        genai.configure(api_key=os.environ['GOOGLE_API_KEY'])
+        genai.configure(api_key=os.environ["GOOGLE_API_KEY"])
 
     def is_direct_completion(self) -> bool:
         return False
@@ -405,7 +430,9 @@ class GoogleGenAIDecoder(DecoderBase, ABC):
 
 class GeminiDecoder(GoogleGenAIDecoder):
 
-    def codegen(self, prompt: str, do_sample: bool = True, num_samples: int = 200) -> List[str]:
+    def codegen(
+        self, prompt: str, do_sample: bool = True, num_samples: int = 200
+    ) -> List[str]:
         kwargs = {}
         if do_sample:
             assert self.temperature > 0, "Temperature must be positive for sampling"
@@ -446,13 +473,21 @@ class GeminiDecoder(GoogleGenAIDecoder):
             },
         ]
 
-        model = genai.GenerativeModel(model_name=self.name, generation_config=genai_config, safety_settings=safety_settings)
+        model = genai.GenerativeModel(
+            model_name=self.name,
+            generation_config=genai_config,
+            safety_settings=safety_settings,
+        )
 
         outputs = []
         for _ in range(batch_size):
             while True:
                 try:
-                    response = model.generate_content("Please generate self-contained code to complete the following problem wrapped in a Python markdown block:" + f"\n```python\n{prompt.strip()}\n```", generation_config=genai_config)
+                    response = model.generate_content(
+                        "Please generate self-contained code to complete the following problem wrapped in a Python markdown block:"
+                        + f"\n```python\n{prompt.strip()}\n```",
+                        generation_config=genai_config,
+                    )
                     output = response.candidates[0].content.parts[0].text
                     outputs.append(output)
                     break

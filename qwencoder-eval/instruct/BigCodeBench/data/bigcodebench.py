@@ -1,8 +1,8 @@
 import hashlib
 import json
 import os
-from typing import Dict
 from pathlib import Path
+from typing import Dict
 
 from data.utils import (
     CACHE_DIR,
@@ -38,7 +38,9 @@ def _ready_bigcodebench_path(subset="full", version="default") -> str:
     return path
 
 
-def get_bigcodebench(err_incomplete=True, subset="full", version="default") -> Dict[str, Dict]:
+def get_bigcodebench(
+    err_incomplete=True, subset="full", version="default"
+) -> Dict[str, Dict]:
     """Get BigCodeBench from BigCode's github repo and return as a list of parsed dicts.
 
     Returns:
@@ -63,6 +65,7 @@ def get_bigcodebench(err_incomplete=True, subset="full", version="default") -> D
     with open(file_path, "r") as f:
         data = json.load(f)
     return data
+
 
 def get_bigcodebench_hash(subset="full", version="default") -> str:
     """Get the hash of BigCodeBench.

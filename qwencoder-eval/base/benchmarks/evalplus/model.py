@@ -100,7 +100,9 @@ class DecoderBase(ABC):
         print(f"{self.chat_mode = }")
 
     @abstractmethod
-    def codegen(self, prompt: str, do_sample: bool = True, num_samples: int = 200) -> List[str]:
+    def codegen(
+        self, prompt: str, do_sample: bool = True, num_samples: int = 200
+    ) -> List[str]:
         pass
 
     @abstractmethod
@@ -136,7 +138,13 @@ class VllmDecoder(DecoderBase):
     def is_direct_completion(self) -> bool:
         return not self.chat_mode
 
-    def codegen(self, prompts: List[str], do_sample: bool = True, num_samples: int = 200, use_tqdm=True) -> List[str]:
+    def codegen(
+        self,
+        prompts: List[str],
+        do_sample: bool = True,
+        num_samples: int = 200,
+        use_tqdm=True,
+    ) -> List[str]:
         if do_sample:
             assert self.temperature > 0, "Temperature must be greater than 0!"
 
@@ -165,9 +173,13 @@ class GeneralVllmDecoder(VllmDecoder):
         self.eos += ["\n```\n", "```"]
         print(f"EOS strings: {self.eos}")
 
-    def codegen(self, prompts: List[str], do_sample: bool = True, num_samples: int = 200) -> List[str]:
+    def codegen(
+        self, prompts: List[str], do_sample: bool = True, num_samples: int = 200
+    ) -> List[str]:
         if self.no_batching:
-            print(f"{self.no_batching = }, disable continous batching. This may be slow.")
+            print(
+                f"{self.no_batching = }, disable continous batching. This may be slow."
+            )
             generated = []
             for prompt in tqdm(prompts):
                 chat_prompt = make_chat_prompt(
@@ -177,7 +189,11 @@ class GeneralVllmDecoder(VllmDecoder):
                     tokenizer=self.tokenizer,
                     chat_mode=self.chat_mode,
                 )
-                generated.append(VllmDecoder.codegen(self, chat_prompt, do_sample, num_samples, use_tqdm=False)[0])
+                generated.append(
+                    VllmDecoder.codegen(
+                        self, chat_prompt, do_sample, num_samples, use_tqdm=False
+                    )[0]
+                )
         else:
             print(f"{self.no_batching = }, enable continous batching.")
             chat_prompts = [
@@ -221,12 +237,16 @@ class HfTorchDecoder(DecoderBase):
         return not self.chat_mode
 
     @torch.inference_mode()
-    def codegen(self, prompt: str, do_sample: bool = True, num_samples: int = 200) -> List[str]:
+    def codegen(
+        self, prompt: str, do_sample: bool = True, num_samples: int = 200
+    ) -> List[str]:
         if self.temperature == 0:
             assert not do_sample
             assert num_samples == 1
 
-        input_tokens = self.tokenizer.encode(prompt, return_tensors="pt").to(self.device)
+        input_tokens = self.tokenizer.encode(prompt, return_tensors="pt").to(
+            self.device
+        )
         kwargs = {}
         if do_sample:
             kwargs["top_p"] = 0.95
@@ -275,7 +295,9 @@ class GenenralHfTorchDecoder(HfTorchDecoder):
         print(f"EOS strings: {self.eos}")
         self.tokenizer = AutoTokenizer.from_pretrained(self.name)
 
-    def codegen(self, prompt: str, do_sample: bool = True, num_samples: int = 200) -> List[str]:
+    def codegen(
+        self, prompt: str, do_sample: bool = True, num_samples: int = 200
+    ) -> List[str]:
         prompt = make_chat_prompt(
             prompt,
             self.instruction_prefix,

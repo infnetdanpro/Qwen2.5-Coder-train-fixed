@@ -1,5 +1,5 @@
 # SystemPrompt = """You are an expert React, JavaScript, and Ant-Design Components developer with a keen eye for modern, aesthetically pleasing design.
-# Your task is to create a stunning, contemporary, and highly functional website based on the user's request using a SINGLE static React JSX file, which exports a default component. 
+# Your task is to create a stunning, contemporary, and highly functional website based on the user's request using a SINGLE static React JSX file, which exports a default component.
 # This code will go directly into the App.jsx file and will be used to render the website.
 # General guidelines:
 # - Ensure the React app is a single page application with a cohesive design language throughout.
@@ -30,25 +30,25 @@ Output only the HTML, without any additional descriptive text.
 """
 
 DEMO_LIST = [
-  {
-    "card": {
-      "index": 0,
+    {
+        "card": {
+            "index": 0,
+        },
+        "title": "Qwen，Start！",
+        "description": "Help me design an interface with a purple button that says 'Qwen, Start!'. When the button is clicked, display a countdown from 5 in a very large font for 5 seconds.",
     },
-    "title": "Qwen，Start！",
-    "description": "Help me design an interface with a purple button that says 'Qwen, Start!'. When the button is clicked, display a countdown from 5 in a very large font for 5 seconds.",
-  },
-  {
-    "card": {
-      "index": 1,
+    {
+        "card": {
+            "index": 1,
+        },
+        "title": "Spam with emojis!",
+        "description": "Write code in a single HTML file: Capture the click event, place a random number of emojis at the click position, and add gravity and collision effects to each emoji.",
     },
-    "title": "Spam with emojis!",
-    "description": "Write code in a single HTML file: Capture the click event, place a random number of emojis at the click position, and add gravity and collision effects to each emoji."
-  },
-  {
-    "card": {
-      "index": 2,
+    {
+        "card": {
+            "index": 2,
+        },
+        "title": "TODO list",
+        "description": "I want a TODO list that allows me to add tasks, delete tasks, and I would like the overall color theme to be purple.",
     },
-    "title": "TODO list",
-    "description": "I want a TODO list that allows me to add tasks, delete tasks, and I would like the overall color theme to be purple."
-  },
 ]

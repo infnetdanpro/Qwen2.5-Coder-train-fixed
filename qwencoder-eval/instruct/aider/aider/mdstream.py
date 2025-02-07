@@ -3,12 +3,11 @@
 import io
 import time
 
+from aider.dump import dump  # noqa: F401
 from rich.console import Console
 from rich.live import Live
 from rich.markdown import Markdown
 from rich.text import Text
-
-from aider.dump import dump  # noqa: F401
 
 _text = """
 # Header

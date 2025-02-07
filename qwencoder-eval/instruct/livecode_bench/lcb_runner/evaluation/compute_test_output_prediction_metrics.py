@@ -2,7 +2,6 @@ import ast
 import json
 
 import tqdm
-
 from lcb_runner.evaluation.pass_k_utils import compute_metrics_from_results
 
 

@@ -1,21 +1,24 @@
-from data import get_bigcodebench
+import argparse
+import json
 import os
 import shutil
-import json
-import argparse
+
+from data import get_bigcodebench
 
 
 def inspection(args):
     """
     Write a series of files for each task into a directory.
-    
+
     Each Directory Structure:
     -- task_id
         -- ground_truth.py: prompt + canonical_solution
         -- completion.py: prompt + completion
         -- execution_trace.txt: execution trace
     """
-    path = os.path.join("inspect", args.eval_results.split("/")[-1].replace(".json", ""))
+    path = os.path.join(
+        "inspect", args.eval_results.split("/")[-1].replace(".json", "")
+    )
     if args.in_place:
         shutil.rmtree(path, ignore_errors=True)
     if not os.path.exists(path):
@@ -31,7 +34,11 @@ def inspection(args):
             os.makedirs(task_path)
         task_id_data = problems[task_id]
         with open(os.path.join(task_path, "ground_truth.py"), "w") as f:
-            f.write(task_id_data[f"{args.subset}_prompt"] + "\n\n" + task_id_data["canonical_solution"])
+            f.write(
+                task_id_data[f"{args.subset}_prompt"]
+                + "\n\n"
+                + task_id_data["canonical_solution"]
+            )
 
         # write test
         with open(os.path.join(task_path, "test_case.py"), "w") as f:
@@ -42,7 +49,9 @@ def inspection(args):
                 f.write(result["solution"])
 
         for i, result in enumerate(results):
-            with open(os.path.join(task_path, f"complete_{i}_execution_trace.txt"), "w") as f:
+            with open(
+                os.path.join(task_path, f"complete_{i}_execution_trace.txt"), "w"
+            ) as f:
                 for test_case, execution_trace in result["details"].items():
                     f.write(f"Test Case: {test_case}\n\n")
                     f.write(execution_trace)

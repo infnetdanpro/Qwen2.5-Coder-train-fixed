@@ -2,7 +2,6 @@ import ast
 import json
 
 import tqdm
-
 from lcb_runner_cq.evaluation.pass_k_utils import compute_metrics_from_results
 
 
@@ -27,7 +26,9 @@ def parse_assert_statement(statement):
 
     comparison = parsed.body[0].test
 
-    if not isinstance(comparison, ast.Compare) or not isinstance(comparison.ops[0], ast.Eq):
+    if not isinstance(comparison, ast.Compare) or not isinstance(
+        comparison.ops[0], ast.Eq
+    ):
         return "Not an equality assertion"
 
     # Extract and return the right side of the '==' operator as a string
@@ -85,7 +86,9 @@ def test_output_metrics(
         sample = samples[idx]
         extracted_generation_list = generations[idx]
         for extracted_generation in extracted_generation_list:
-            global_result = check_testcase_output(extracted_generation, sample["output"])
+            global_result = check_testcase_output(
+                extracted_generation, sample["output"]
+            )
             idx_results.append([global_result])
         results.append(idx_results)
 

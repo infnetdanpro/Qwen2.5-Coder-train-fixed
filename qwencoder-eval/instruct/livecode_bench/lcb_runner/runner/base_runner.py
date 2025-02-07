@@ -1,12 +1,11 @@
-import os
 import json
+import os
 from abc import ABC, abstractmethod
 
-from tqdm import tqdm
-
 from lcb_runner.lm_styles import LanguageModel
-from lcb_runner.utils.path_utils import get_cache_path
 from lcb_runner.utils.multiprocess import run_tasks_in_parallel
+from lcb_runner.utils.path_utils import get_cache_path
+from tqdm import tqdm
 
 
 class BaseRunner(ABC):

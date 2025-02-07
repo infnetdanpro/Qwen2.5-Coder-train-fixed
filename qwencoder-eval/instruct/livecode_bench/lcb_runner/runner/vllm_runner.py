@@ -25,7 +25,7 @@ class VLLMRunner(BaseRunner):
             dtype=args.dtype,
             max_model_len=4096,
             enforce_eager=True,
-            gpu_memory_utilization=0.98
+            gpu_memory_utilization=0.98,
         )
         print(f"Loading from {model.model_name}")
         self.sampling_params = SamplingParams(

@@ -189,7 +189,9 @@ def split_comma(str_patterns):
     return patterns
 
 
-def subfolder_collect(folder, watch_output_root, depth, include, exclude, target_pattern=".saved"):
+def subfolder_collect(
+    folder, watch_output_root, depth, include, exclude, target_pattern=".saved"
+):
     include_patterns, exclude_patterns = split_comma(include), split_comma(exclude)
 
     def test_collectable(subfolder):
@@ -214,16 +216,24 @@ def subfolder_collect(folder, watch_output_root, depth, include, exclude, target
         for f in folder.glob(pat):
             maybe_folder = f.parent
             if test_collectable(maybe_folder):
-                if any([pat in str(maybe_folder) for pat in exclude_patterns]):  # all must not appear
+                if any(
+                    [pat in str(maybe_folder) for pat in exclude_patterns]
+                ):  # all must not appear
                     continue
-                if not all([pat in str(maybe_folder) for pat in include_patterns]):  # must appear at least one
+                if not all(
+                    [pat in str(maybe_folder) for pat in include_patterns]
+                ):  # must appear at least one
                     continue
 
                 relative_to_root = str(maybe_folder.relative_to(folder))
                 watchdog_output = watch_output_root.joinpath(relative_to_root)
 
                 status = ProcessStatus.TRACKED
-                for to_test_status in [ProcessStatus.RUNNING, ProcessStatus.FINISH, ProcessStatus.SKIPPED]:
+                for to_test_status in [
+                    ProcessStatus.RUNNING,
+                    ProcessStatus.FINISH,
+                    ProcessStatus.SKIPPED,
+                ]:
                     maybe_status_file = ProcessStatus.to_file(to_test_status)
                     if watchdog_output.joinpath(maybe_status_file).exists():
                         status = to_test_status

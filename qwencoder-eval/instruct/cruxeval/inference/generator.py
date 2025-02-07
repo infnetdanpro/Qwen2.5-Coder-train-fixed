@@ -4,12 +4,10 @@ import sys
 from math import ceil
 
 import numpy as np
-from vllm import SamplingParams
-from torch.utils.data import DataLoader
-
-from utils import TokenizedDataset, complete_code
-
 import tasks
+from torch.utils.data import DataLoader
+from utils import TokenizedDataset, complete_code
+from vllm import SamplingParams
 
 
 class Generator:
@@ -20,7 +18,10 @@ class Generator:
         self.args = args
 
     def generate(self, task_name):
-        if self.args.model == "Phind/Phind-CodeLlama-34B-v2" and task_name == "output_prediction":
+        if (
+            self.args.model == "Phind/Phind-CodeLlama-34B-v2"
+            and task_name == "output_prediction"
+        ):
             task = tasks.get_task(task_name, cot=self.args.cot, phind_output=True)
         else:
             task = tasks.get_task(task_name, cot=self.args.cot, phind_output=False)
@@ -45,7 +46,9 @@ class Generator:
 
         n_tasks = dataset.num_rows
 
-        prompts = [self.args.prefix + task.get_prompt(dataset[i]) for i in range(n_tasks)]
+        prompts = [
+            self.args.prefix + task.get_prompt(dataset[i]) for i in range(n_tasks)
+        ]
         task_ids = [item["id"] for item in dataset]
 
         if not self.args.do_sample:
@@ -62,13 +65,19 @@ class Generator:
             stop=task.stop_words,
         )
 
-        generations, generations_raw = complete_code(task, self.model, sampling_params, prompts, task_ids)
+        generations, generations_raw = complete_code(
+            task, self.model, sampling_params, prompts, task_ids
+        )
 
         references = [task.get_reference(dataset[i]) for i in range(n_tasks)]
 
         if len(list(generations.values())[0]) > self.args.n_samples:
-            generations = {k: v[:self.args.n_samples] for k, v in generations.items()}
-            generations_raw = {k: v[:self.args.n_samples] for k, v in generations_raw.items()}
-        assert all([len(gen) == self.args.n_samples for gen in generations.values()]), f"{[len(gen) for gen in generations.values()]}"
+            generations = {k: v[: self.args.n_samples] for k, v in generations.items()}
+            generations_raw = {
+                k: v[: self.args.n_samples] for k, v in generations_raw.items()
+            }
+        assert all(
+            [len(gen) == self.args.n_samples for gen in generations.values()]
+        ), f"{[len(gen) for gen in generations.values()]}"
 
         return generations, generations_raw, references

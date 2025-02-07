@@ -1,12 +1,16 @@
-import os 
-import re 
-import json 
+import json
+import os
+import re
+
 # from humanevalpack import create_all_tasks, create_task
 # create_all_tasks()
 
+
 def extract_kotlin_code_block(text, entry_point) -> str:
 
-    code_block_pattern = re.compile(rf"```(?:[Kk]otlin)?(.*?[^\n]*?{entry_point}.*?)```", re.DOTALL)
+    code_block_pattern = re.compile(
+        rf"```(?:[Kk]otlin)?(.*?[^\n]*?{entry_point}.*?)```", re.DOTALL
+    )
     code_block = code_block_pattern.search(text)
 
     if code_block is None:
@@ -18,13 +22,14 @@ def extract_kotlin_code_block(text, entry_point) -> str:
     else:
         return code_block.group(1)
 
+
 def remove_extra_braces(code):
     stack = []
-    result = ''
+    result = ""
     for char in code:
-        if char == '{':
+        if char == "{":
             stack.append(char)
-        elif char == '}':
+        elif char == "}":
             if stack:
                 stack.pop()
             else:
@@ -33,12 +38,16 @@ def remove_extra_braces(code):
         result += char
     return result
 
-def extract_kotlin_code(text, item, ):
+
+def extract_kotlin_code(
+    text,
+    item,
+):
 
     try:
-        code = extract_kotlin_code_block(text, item['entry_point'])
+        code = extract_kotlin_code_block(text, item["entry_point"])
         # print(code)
-        
+
         pattern = r"\s*fun\s+main\s*\(\s*\)\s*\{.*?\n\s*\}"
         code = re.sub(pattern, "", code, flags=re.DOTALL)
 
@@ -52,7 +61,7 @@ def extract_kotlin_code(text, item, ):
         # pattern_solution_class = r"public\s+class\s+\w+\s*\{\s*|\s*\}\s*$"
         # # Removing the class declaration and closing brace to keep only the methods
         # code = re.sub(pattern_solution_class, "", code, flags=re.DOTALL).strip()
-    
+
         pattern_imports = r"^import.*?$"
 
         # Extracting import lines from the code
@@ -66,27 +75,27 @@ def extract_kotlin_code(text, item, ):
         sta_idx = code.index("{")
         code = code[sta_idx:]
 
-
-        full_code = "\n".join(import_lines)+'\n' +item['prompt']+'\n'+ code+'\n' + item['test']
+        full_code = (
+            "\n".join(import_lines)
+            + "\n"
+            + item["prompt"]
+            + "\n"
+            + code
+            + "\n"
+            + item["test"]
+        )
     except:
-        return None 
+        return None
     # print(full_code)
     return full_code
 
 
-if __name__ == '__main__':
-    items = [json.loads(x) for x in open('completions_kotlin_humanevalsynthesize.jsonl').readlines() if x]
+if __name__ == "__main__":
+    items = [
+        json.loads(x)
+        for x in open("completions_kotlin_humanevalsynthesize.jsonl").readlines()
+        if x
+    ]
 
     for item in items:
-        extract_kotlin_code(item['raw_generation'][0], item)
-        
-
-
-        
-  
-
-
-
-
-
-
+        extract_kotlin_code(item["raw_generation"][0], item)

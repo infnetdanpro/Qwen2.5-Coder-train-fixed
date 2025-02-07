@@ -1,7 +1,8 @@
 import argparse
 import os
-from os import PathLike
 import sys
+from os import PathLike
+
 eval_plus_path = os.path.dirname(os.path.abspath(__file__)) + "/evalplus/"
 sys.path = [eval_plus_path] + sys.path
 from model import DecoderBase, make_model
@@ -12,7 +13,6 @@ from rich.progress import (
     TextColumn,
     TimeElapsedColumn,
 )
-
 
 MODEL_MAPPING = {
     #  Can be either repo's name or /path/to/model
@@ -40,7 +40,9 @@ def construct_contract_prompt(prompt: str, contract_type: str, contract: str) ->
         assert sep != ""
         l = prompt.split(sep)
         contract = "\n".join([x.split("#")[0] for x in contract.splitlines()])
-        l[1] = l[1] + contract + "\n" + " " * (len(contract) - len(contract.lstrip()) - 1)
+        l[1] = (
+            l[1] + contract + "\n" + " " * (len(contract) - len(contract.lstrip()) - 1)
+        )
         return sep.join(l)
     elif contract_type == "code":
         # at the beginning of the function
@@ -50,7 +52,9 @@ def construct_contract_prompt(prompt: str, contract_type: str, contract: str) ->
 
 def code_generate(args, workdir: PathLike, model: DecoderBase, id_range=None):
     with Progress(
-        TextColumn(f"{args.dataset} •" + "[progress.percentage]{task.percentage:>3.0f}%"),
+        TextColumn(
+            f"{args.dataset} •" + "[progress.percentage]{task.percentage:>3.0f}%"
+        ),
         BarColumn(),
         MofNCompleteColumn(),
         TextColumn("•"),
@@ -58,9 +62,11 @@ def code_generate(args, workdir: PathLike, model: DecoderBase, id_range=None):
     ) as p:
         if args.dataset == "humaneval":
             from evalplus.data import get_human_eval_plus
+
             dataset = get_human_eval_plus()
         elif args.dataset == "mbpp":
             from evalplus.data import get_mbpp_plus
+
             dataset = get_mbpp_plus()
 
         for task_id, task in p.track(dataset.items()):
@@ -79,7 +85,13 @@ def code_generate(args, workdir: PathLike, model: DecoderBase, id_range=None):
             n_existing = 0
             if args.resume:
                 # count existing .py files
-                n_existing = len([f for f in os.listdir(os.path.join(workdir, p_name)) if f.endswith(".py")])
+                n_existing = len(
+                    [
+                        f
+                        for f in os.listdir(os.path.join(workdir, p_name))
+                        if f.endswith(".py")
+                    ]
+                )
                 if n_existing > 0:
                     log += f" (resuming from {n_existing})"
 
@@ -90,7 +102,9 @@ def code_generate(args, workdir: PathLike, model: DecoderBase, id_range=None):
             while sidx < args.n_samples:
                 model.dataset = args.dataset
                 outputs = model.codegen(
-                    construct_contract_prompt(task["prompt"], args.contract_type, task["contract"]).strip(),
+                    construct_contract_prompt(
+                        task["prompt"], args.contract_type, task["contract"]
+                    ).strip(),
                     do_sample=not args.greedy,
                     num_samples=args.n_samples - sidx,
                 )
@@ -98,7 +112,9 @@ def code_generate(args, workdir: PathLike, model: DecoderBase, id_range=None):
                 for impl in outputs:
                     if "```" in impl:
                         impl = impl.split("```")[0]
-                        print("``` exist in generation. Please check the generation results.")
+                        print(
+                            "``` exist in generation. Please check the generation results."
+                        )
 
                     try:
                         with open(
@@ -117,12 +133,16 @@ def code_generate(args, workdir: PathLike, model: DecoderBase, id_range=None):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--model_type", required=True, type=str, choices=MODEL_MAPPING.keys())
+    parser.add_argument(
+        "--model_type", required=True, type=str, choices=MODEL_MAPPING.keys()
+    )
     parser.add_argument("--model_path", type=str, default=None)
     parser.add_argument("--model_size", required=True, type=str)
     parser.add_argument("--bs", default=1, type=int)
     parser.add_argument("--temperature", default=0.0, type=float)
-    parser.add_argument("--dataset", required=True, type=str, choices=["humaneval", "mbpp"])
+    parser.add_argument(
+        "--dataset", required=True, type=str, choices=["humaneval", "mbpp"]
+    )
     parser.add_argument("--root", type=str, required=True)
     parser.add_argument("--n_samples", default=1, type=int)
     parser.add_argument("--resume", action="store_true")
@@ -173,7 +193,7 @@ def main():
         batch_size=args.bs,
         temperature=args.temperature,
         dataset=args.dataset,
-        tensor_parallel_size=args.tensor_parallel_size
+        tensor_parallel_size=args.tensor_parallel_size,
     )
     workdir = os.path.join(
         args.root,

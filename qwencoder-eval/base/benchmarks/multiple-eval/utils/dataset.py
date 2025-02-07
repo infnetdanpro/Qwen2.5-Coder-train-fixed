@@ -1,6 +1,7 @@
-import os
-import numpy as np
 import json
+import os
+
+import numpy as np
 
 
 class HumanEvalDataset:
@@ -13,7 +14,9 @@ class HumanEvalDataset:
         issft: whether to use the SFT setting
         """
         self.root = root
-        self.data = open(os.path.join(self.root, f"humaneval-{language}.jsonl")).readlines()
+        self.data = open(
+            os.path.join(self.root, f"humaneval-{language}.jsonl")
+        ).readlines()
 
         tmp = self.get_qa_only_data(self.data, issft)
         self.clean_data = []
@@ -22,7 +25,9 @@ class HumanEvalDataset:
                 self.clean_data.append(tmp[i])
         self.stopwords = self.clean_data[0]["stopwords"]
         np.random.seed(1234)
-        print(f"Read HumanEval::{language} from {root}, number of samples {len(self.clean_data)}")
+        print(
+            f"Read HumanEval::{language} from {root}, number of samples {len(self.clean_data)}"
+        )
 
     def get_qa_only_data(self, data_json, sft=False):
         """
@@ -45,7 +50,14 @@ class HumanEvalDataset:
                 s = line["stop_tokens"]
             else:
                 s = []
-            ans.append({"prompt": prompt, "task_id": line["task_id"], "original_prompt": origin_prompt, "stopwords": s})
+            ans.append(
+                {
+                    "prompt": prompt,
+                    "task_id": line["task_id"],
+                    "original_prompt": origin_prompt,
+                    "stopwords": s,
+                }
+            )
         return ans
 
     def __len__(self):

@@ -1,16 +1,17 @@
+import gzip
+import itertools
+import json
 import os
 import sys
-import fire
-import json
-import gzip
-import regex
-import numpy as np
-import itertools
-
-from typing import *
-from tqdm.auto import tqdm
 from collections import defaultdict
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from typing import *
+
+import fire
+import numpy as np
+import regex
+from tqdm.auto import tqdm
+
 from .data import stream_jsonl
 from .execution import check_correctness
 
@@ -90,7 +91,14 @@ def read_dataset(
     if "humaneval" in dataset_type.lower():
         if data_file is None:
             current_path = os.path.dirname(os.path.abspath(__file__))
-            data_file = os.path.join(current_path, "..", "humaneval-x", "python", "data", "humaneval_python.jsonl.gz")
+            data_file = os.path.join(
+                current_path,
+                "..",
+                "humaneval-x",
+                "python",
+                "data",
+                "humaneval_python.jsonl.gz",
+            )
         dataset = {task["task_id"]: task for task in stream_jsonl(data_file)}
     else:
         raise f"Dataset: {dataset_type} not supported."
@@ -98,7 +106,11 @@ def read_dataset(
     return dataset
 
 
-def estimate_pass_at_k(num_samples: Union[int, List[int], np.ndarray], num_correct: Union[List[int], np.ndarray], k: int) -> np.ndarray:
+def estimate_pass_at_k(
+    num_samples: Union[int, List[int], np.ndarray],
+    num_correct: Union[List[int], np.ndarray],
+    k: int,
+) -> np.ndarray:
     """
     Estimates pass@k of each problem and returns them in an array.
     """
@@ -117,10 +129,14 @@ def estimate_pass_at_k(num_samples: Union[int, List[int], np.ndarray], num_corre
         assert len(num_samples) == len(num_correct)
         num_samples_it = iter(num_samples)
 
-    return np.array([estimator(int(n), int(c), k) for n, c in zip(num_samples_it, num_correct)])
+    return np.array(
+        [estimator(int(n), int(c), k) for n, c in zip(num_samples_it, num_correct)]
+    )
 
 
-def process_humaneval_test(sample, problems, example_test=False, is_mbpp=False, language="python"):
+def process_humaneval_test(
+    sample, problems, example_test=False, is_mbpp=False, language="python"
+):
     """
     Processes a sample for evaluation.
     """
@@ -129,7 +145,11 @@ def process_humaneval_test(sample, problems, example_test=False, is_mbpp=False, 
         return sample["generation"] + "\n" + "\n".join(problems[task_id]["test"])
 
     prompt = sample["prompt"]
-    if example_test and "example_test" in problems[task_id] and problems[task_id]["example_test"] != "":
+    if (
+        example_test
+        and "example_test" in problems[task_id]
+        and problems[task_id]["example_test"] != ""
+    ):
         test = problems[task_id]["example_test"]
     else:
         test = problems[task_id]["test"]
@@ -169,8 +189,19 @@ def process_humaneval_test(sample, problems, example_test=False, is_mbpp=False, 
                 if p + "." in code:
                     other_pkgs.append(f'"{pkg}"')
         if other_pkgs:
-            import_other_pkgs = "import (\n" + "    ".join([p + "\n" for p in other_pkgs]) + ")"
-            test_string = test_setup + "\n" + import_other_pkgs + "\n" + prompt + code + "\n" + test
+            import_other_pkgs = (
+                "import (\n" + "    ".join([p + "\n" for p in other_pkgs]) + ")"
+            )
+            test_string = (
+                test_setup
+                + "\n"
+                + import_other_pkgs
+                + "\n"
+                + prompt
+                + code
+                + "\n"
+                + test
+            )
         else:
             test_string = test_setup + "\n" + prompt + code + "\n" + test
     elif language == "rs":
@@ -238,10 +269,19 @@ def evaluate_functional_correctness(
                     lang = "js"
                 tmp_dir_ = os.path.join(tmp_dir, "evaluation", lang)
                 sample["generation"] = sample["canonical_solution"]
-                sample["test_code"] = process_humaneval_test(sample, problems, example_test, language)
+                sample["test_code"] = process_humaneval_test(
+                    sample, problems, example_test, language
+                )
                 if sample["test_code"] is None:
                     continue
-                args = (task_id, sample, lang, timeout, tmp_dir_, completion_id[task_id])
+                args = (
+                    task_id,
+                    sample,
+                    lang,
+                    timeout,
+                    tmp_dir_,
+                    completion_id[task_id],
+                )
                 future = executor.submit(check_correctness, *args)
                 futures.append(future)
                 completion_id[task_id] += 1
@@ -258,7 +298,9 @@ def evaluate_functional_correctness(
                     lang = "python"
                 tmp_dir_ = os.path.join(tmp_dir, "evaluation", lang)
                 sample["task_id"] = task_id
-                sample["test_code"] = process_humaneval_test(sample, problems, example_test, is_mbpp, language)
+                sample["test_code"] = process_humaneval_test(
+                    sample, problems, example_test, is_mbpp, language
+                )
                 if sample["test_code"] is None:
                     continue
                 if "completion_id" in sample:
@@ -291,7 +333,11 @@ def evaluate_functional_correctness(
     correct = np.array(correct)
     if evaluate_pass_at_k:
         ks = k
-        pass_at_k = {f"pass@{k}": estimate_pass_at_k(total, correct, k).mean() for k in ks if (total >= k).all()}
+        pass_at_k = {
+            f"pass@{k}": estimate_pass_at_k(total, correct, k).mean()
+            for k in ks
+            if (total >= k).all()
+        }
         print(pass_at_k)
     else:
         print("Total:", np.sum(total))

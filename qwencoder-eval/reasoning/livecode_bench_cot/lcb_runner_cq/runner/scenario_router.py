@@ -1,16 +1,16 @@
 from typing import Union
 
-from lcb_runner_cq.utils.scenarios import Scenario
-from lcb_runner_cq.lm_styles import LanguageModel
-from lcb_runner_cq.evaluation import codegen_metrics, test_output_metrics
-from lcb_runner_cq.prompts import format_prompt_generation, format_prompt_test_output
-from lcb_runner_cq.utils.extraction_utils import extract_code, extract_test_output_code
 from lcb_runner_cq.benchmarks import (
     CodeGenerationProblem,
     TestOutputPredictionProblem,
     load_code_generation_dataset,
     load_test_prediction_dataset,
 )
+from lcb_runner_cq.evaluation import codegen_metrics, test_output_metrics
+from lcb_runner_cq.lm_styles import LanguageModel
+from lcb_runner_cq.prompts import format_prompt_generation, format_prompt_test_output
+from lcb_runner_cq.utils.extraction_utils import extract_code, extract_test_output_code
+from lcb_runner_cq.utils.scenarios import Scenario
 
 # BenchMarkType = list[CodeGenerationProblem | TestOutputPredictionProblem]
 BenchMarkType = list[Union[CodeGenerationProblem, TestOutputPredictionProblem]]
@@ -48,7 +48,10 @@ def combine_results(scenario: Scenario, results: list[list[str]], model: Languag
         combined_results = [
             (
                 outputs_list,
-                [extract_test_output_code(output, model.model_style) for output in outputs_list],
+                [
+                    extract_test_output_code(output, model.model_style)
+                    for output in outputs_list
+                ],
             )
             for outputs_list in results
         ]
@@ -61,11 +64,19 @@ def combine_results(scenario: Scenario, results: list[list[str]], model: Languag
 def sort_and_extract_save_results(scenario: Scenario, save_results: list[dict]):
     if scenario == Scenario.codegeneration:
         save_results = sorted(save_results, key=lambda x: x["question_id"])
-        combined_results = [(save_result_instance["output_list"], save_result_instance["code_list"]) for save_result_instance in save_results]
+        combined_results = [
+            (save_result_instance["output_list"], save_result_instance["code_list"])
+            for save_result_instance in save_results
+        ]
 
     elif scenario == Scenario.testoutputprediction:
-        save_results = sorted(save_results, key=lambda x: (x["question_id"], x["test_id"]))
-        combined_results = [(save_result_instance["output_list"], save_result_instance["pred_list"]) for save_result_instance in save_results]
+        save_results = sorted(
+            save_results, key=lambda x: (x["question_id"], x["test_id"])
+        )
+        combined_results = [
+            (save_result_instance["output_list"], save_result_instance["pred_list"])
+            for save_result_instance in save_results
+        ]
 
     else:
         raise ValueError(f"Scenario {scenario} not implemented")

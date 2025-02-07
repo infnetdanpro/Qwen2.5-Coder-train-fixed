@@ -1,9 +1,9 @@
-import json
 import argparse
+import json
 from datetime import datetime
 
-from lcb_runner.utils.scenarios import Scenario
 from lcb_runner.utils.path_utils import get_eval_all_output_path
+from lcb_runner.utils.scenarios import Scenario
 
 
 def get_parser():

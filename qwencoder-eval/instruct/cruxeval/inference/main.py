@@ -1,21 +1,19 @@
 # Copyright (c) Meta Platforms, Inc. and affiliates.
-import os
-import sys
-import json
-import random
 import fnmatch
+import json
+import os
+import random
+import sys
 
-import torch
 import datasets
 import numpy as np
+import torch
 import transformers
-from vllm import LLM
-from transformers import HfArgumentParser, AutoTokenizer
-
-from generator import Generator
 from generation_arguments import EvalArguments
-
+from generator import Generator
 from tasks import ALL_TASKS
+from transformers import AutoTokenizer, HfArgumentParser
+from vllm import LLM
 
 
 class MultiChoice:
@@ -44,7 +42,12 @@ def parse_args():
         default="codeparrot/codeparrot-small",
         help="Model to evaluate, provide a repo name in Hugging Face hub or a local path",
     )
-    parser.add_argument("--tensor_parallel_size", type=int, default=1, help='number of tensor parallel replicas')
+    parser.add_argument(
+        "--tensor_parallel_size",
+        type=int,
+        default=1,
+        help="number of tensor parallel replicas",
+    )
     parser.add_argument(
         "--revision",
         default=None,
@@ -154,7 +157,9 @@ def parse_args():
 
     args.precision = precision_map[args.precision]
     args.tasks = pattern_match(args.tasks.split(","), ALL_TASKS)
-    assert (len(args.tasks) == 1), f"Only one task is supported at the moment, you gave {args.tasks}"
+    assert (
+        len(args.tasks) == 1
+    ), f"Only one task is supported at the moment, you gave {args.tasks}"
     args.task_name = args.tasks[0]
 
     assert args.instruction_tokens is None, "Instruction tokens are not supported yet"
@@ -186,7 +191,7 @@ def main():
         gpu_memory_utilization=0.9,
         tensor_parallel_size=int(os.getenv("VLLM_N_GPUS", args.tensor_parallel_size)),
         max_model_len=8192,
-        distributed_executor_backend='ray',
+        distributed_executor_backend="ray",
     )
 
     tokenizer = AutoTokenizer.from_pretrained(

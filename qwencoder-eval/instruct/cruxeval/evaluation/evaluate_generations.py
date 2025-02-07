@@ -1,10 +1,10 @@
 # Copyright (c) Meta Platforms, Inc. and affiliates.
 
-import json
 import argparse
-
-from pathlib import Path
+import json
 from concurrent.futures import ProcessPoolExecutor
+from pathlib import Path
+
 from utils_general import (
     evaluate_score,
     pass_at_k,
@@ -22,7 +22,9 @@ def evaluate_generations(generations, mode):
     try:
         generations_list = [generations[f"sample_{i}"] for i in range(len(dataset))]
     except:
-        assert False, "check format of generations, should be dictionary of lists with keys of id's in the form sample_i"
+        assert (
+            False
+        ), "check format of generations, should be dictionary of lists with keys of id's in the form sample_i"
 
     with ProcessPoolExecutor() as executor:
         args_list = zip(generations_list, references, [mode] * len(generations_list))
@@ -74,7 +76,12 @@ if __name__ == "__main__":
 
     results = evaluate_generations(generations, args.mode)
     print(f"Finished!")
-    print("pass@1:", round(results["pass_at_1"], 1), "pass@5:", round(results["pass_at_5"], 1))
+    print(
+        "pass@1:",
+        round(results["pass_at_1"], 1),
+        "pass@5:",
+        round(results["pass_at_5"], 1),
+    )
     if args.scored_results_path != None:
         print(f"Dumping to {args.scored_results_path}")
         with open(args.scored_results_path, "w") as f:

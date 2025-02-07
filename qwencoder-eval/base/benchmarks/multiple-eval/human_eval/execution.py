@@ -4,12 +4,12 @@ import io
 import multiprocessing
 import os
 import platform
-import signal
 import random
+import signal
 import subprocess
 import tempfile
-from typing import *
 from pathlib import Path
+from typing import *
 
 java_exec = ""
 node_exec = ""
@@ -81,7 +81,9 @@ def check_correctness(
                 os.chdir = chdir
 
         elif "go" in language_type.lower():
-            assert tmp_dir is not None, "Go should be evaluated in a dir where necessary module files installed."
+            assert (
+                tmp_dir is not None
+            ), "Go should be evaluated in a dir where necessary module files installed."
 
             import os
             import shutil
@@ -107,7 +109,14 @@ def check_correctness(
                     # Once you have read this disclaimer and taken appropriate precautions,
                     # uncomment the following line and proceed at your own risk:
                     exec_result = subprocess.run(
-                        [f"{go_exec}go", "test", f"-timeout={timeout}s", "main_test.go"], timeout=timeout, capture_output=True
+                        [
+                            f"{go_exec}go",
+                            "test",
+                            f"-timeout={timeout}s",
+                            "main_test.go",
+                        ],
+                        timeout=timeout,
+                        capture_output=True,
                     )
 
                 if exec_result.returncode == 0:
@@ -153,7 +162,11 @@ def check_correctness(
                     # does not perform destructive actions on their host or network.
                     # Once you have read this disclaimer and taken appropriate precautions,
                     # uncomment the following line and proceed at your own risk:
-                    exec_result = subprocess.run([f"{node_exec}node", "test.js"], timeout=timeout, capture_output=True)
+                    exec_result = subprocess.run(
+                        [f"{node_exec}node", "test.js"],
+                        timeout=timeout,
+                        capture_output=True,
+                    )
 
                 if exec_result.stderr.decode():
                     err = exec_result.stderr.decode()
@@ -183,10 +196,16 @@ def check_correctness(
             open(f"test.cpp", "w").write(sample["test_code"])
             if "162" in task_id:
                 compilation_result = subprocess.run(
-                    ["/usr/bin/g++", "-std=c++17", "test.cpp", "-lcrypto", "-lssl"], timeout=timeout, capture_output=True
+                    ["/usr/bin/g++", "-std=c++17", "test.cpp", "-lcrypto", "-lssl"],
+                    timeout=timeout,
+                    capture_output=True,
                 )
             else:
-                compilation_result = subprocess.run(["/usr/bin/g++", "-std=c++17", "test.cpp"], timeout=timeout, capture_output=True)
+                compilation_result = subprocess.run(
+                    ["/usr/bin/g++", "-std=c++17", "test.cpp"],
+                    timeout=timeout,
+                    capture_output=True,
+                )
             if compilation_result.returncode != 0:
                 if compilation_result.stderr:
                     err = compilation_result.stderr.decode()
@@ -206,7 +225,9 @@ def check_correctness(
                         # does not perform destructive actions on their host or network.
                         # Once you have read this disclaimer and taken appropriate precautions,
                         # uncomment the following line and proceed at your own risk:
-                        exec_result = subprocess.run(["./a.out"], timeout=timeout, capture_output=True)
+                        exec_result = subprocess.run(
+                            ["./a.out"], timeout=timeout, capture_output=True
+                        )
 
                     if exec_result.returncode == 0:
                         result.append("passed")
@@ -245,7 +266,9 @@ def check_correctness(
                 exec_result = None
                 with time_limit(timeout):
                     cmd = f"{php_exec}php -f test.php"
-                    exec_result = subprocess.run(cmd, timeout=timeout, capture_output=True, shell=True)
+                    exec_result = subprocess.run(
+                        cmd, timeout=timeout, capture_output=True, shell=True
+                    )
 
                 if exec_result.returncode == 0:
                     result.append("passed")
@@ -284,7 +307,9 @@ def check_correctness(
                 exec_result = None
                 with time_limit(timeout):
                     cmd = "/bin/bash test.sh"
-                    exec_result = subprocess.run(cmd, timeout=10, capture_output=True, shell=True)
+                    exec_result = subprocess.run(
+                        cmd, timeout=10, capture_output=True, shell=True
+                    )
 
                 if exec_result.returncode == 0:
                     result.append("passed")
@@ -321,7 +346,9 @@ def check_correctness(
             env = {"PATH": f"{node_exec}:" + subprocess.os.environ["PATH"]}
             open(f"test.ts", "w").write(sample["test_code"])
             cmd = f"{tsc_exec}tsc test.ts --target ES2015 --lib ES2015,DOM"
-            compilation_result = subprocess.run(cmd, timeout=timeout, capture_output=True, env=env, shell=True)
+            compilation_result = subprocess.run(
+                cmd, timeout=timeout, capture_output=True, env=env, shell=True
+            )
             if compilation_result.returncode != 0:
                 if compilation_result.stderr:
                     err = compilation_result.stderr.decode()
@@ -332,7 +359,11 @@ def check_correctness(
                 try:
                     exec_result = None
                     with time_limit(timeout):
-                        exec_result = subprocess.run([f"{node_exec}node", "test.js"], timeout=timeout, capture_output=True)
+                        exec_result = subprocess.run(
+                            [f"{node_exec}node", "test.js"],
+                            timeout=timeout,
+                            capture_output=True,
+                        )
 
                     if exec_result.returncode == 0:
                         result.append("passed")
@@ -353,7 +384,9 @@ def check_correctness(
             if result[-1] != "passed":
                 env = {"PATH": f"{node_exec}:" + subprocess.os.environ["PATH"]}
                 cmd = f"{tsc_exec}tsc test.ts"
-                compilation_result = subprocess.run(cmd, timeout=timeout, capture_output=True, env=env, shell=True)
+                compilation_result = subprocess.run(
+                    cmd, timeout=timeout, capture_output=True, env=env, shell=True
+                )
                 if compilation_result.returncode != 0:
                     if compilation_result.stderr:
                         err = compilation_result.stderr.decode()
@@ -364,7 +397,11 @@ def check_correctness(
                     try:
                         exec_result = None
                         with time_limit(timeout):
-                            exec_result = subprocess.run([f"{node_exec}node", "test.js"], timeout=timeout, capture_output=True)
+                            exec_result = subprocess.run(
+                                [f"{node_exec}node", "test.js"],
+                                timeout=timeout,
+                                capture_output=True,
+                            )
 
                         if exec_result.returncode == 0:
                             result[-1] = "passed"
@@ -411,7 +448,13 @@ def check_correctness(
                     cmd = f"{cs_exec}mono Program.exe"
                     env = dict(MONO_TRACE_LISTENER="Console.Error")
                     with time_limit(timeout):
-                        exec_result = subprocess.run(cmd, timeout=timeout, shell=True, capture_output=True, env=env)
+                        exec_result = subprocess.run(
+                            cmd,
+                            timeout=timeout,
+                            shell=True,
+                            capture_output=True,
+                            env=env,
+                        )
 
                     if "Fail" not in exec_result.stderr.decode():
                         result.append("passed")
@@ -470,7 +513,12 @@ def check_correctness(
             # Pass OR Fail compilation
             log_filename: str = file_prefix + ".jsonl"
             log_path: str = os.path.join(RUST_LOGS, log_filename)
-            cargo_check: str = "cargo check --bin " + file_prefix + " --message-format json >> " + log_path
+            cargo_check: str = (
+                "cargo check --bin "
+                + file_prefix
+                + " --message-format json >> "
+                + log_path
+            )
             # Compilation build status
             returned_val_compilation: int
 
@@ -487,7 +535,12 @@ def check_correctness(
             if returned_val_compilation == 0:
 
                 # Execution pipeline
-                cargo_test: str = "cargo test --bin " + file_prefix + " --message-format json >> " + log_path
+                cargo_test: str = (
+                    "cargo test --bin "
+                    + file_prefix
+                    + " --message-format json >> "
+                    + log_path
+                )
                 returned_val_execution = os.system(cargo_test)
 
                 if returned_val_execution == 0:
@@ -518,7 +571,9 @@ def check_correctness(
             for _ in range(5):
                 try:
                     cmd = f"{java_exec}javac -cp javatuples-1.2.jar Problem.java"
-                    compilation_result = subprocess.run(cmd, timeout=60, capture_output=True, shell=True)
+                    compilation_result = subprocess.run(
+                        cmd, timeout=60, capture_output=True, shell=True
+                    )
                     compile_returncode = compilation_result.returncode
                     break
                 except subprocess.TimeoutExpired as e:
@@ -538,11 +593,15 @@ def check_correctness(
                     # Once you have read this disclaimer and taken appropriate precautions,
                     # uncomment the following line and proceed at your own risk:
                     cmd = f"{java_exec}java -ea -cp .:javatuples-1.2.jar Problem"
-                    exec_result = subprocess.run(cmd, timeout=timeout, capture_output=True, shell=True)
+                    exec_result = subprocess.run(
+                        cmd, timeout=timeout, capture_output=True, shell=True
+                    )
                     if exec_result.returncode == 0:
                         res = "passed"
                     elif exec_result.returncode == 1:
-                        if "AssertionError" in exec_result.stderr.decode("unicode-escape"):
+                        if "AssertionError" in exec_result.stderr.decode(
+                            "unicode-escape"
+                        ):
                             res = "failed: wrong answer"
                         else:
                             res = f"failed: {exec_result.stderr.decode()}"
@@ -683,10 +742,16 @@ def reliability_guard(maximum_memory_bytes: Optional[int] = None):
     if maximum_memory_bytes is not None:
         import resource
 
-        resource.setrlimit(resource.RLIMIT_AS, (maximum_memory_bytes, maximum_memory_bytes))
-        resource.setrlimit(resource.RLIMIT_DATA, (maximum_memory_bytes, maximum_memory_bytes))
+        resource.setrlimit(
+            resource.RLIMIT_AS, (maximum_memory_bytes, maximum_memory_bytes)
+        )
+        resource.setrlimit(
+            resource.RLIMIT_DATA, (maximum_memory_bytes, maximum_memory_bytes)
+        )
         if not platform.uname().system == "Darwin":
-            resource.setrlimit(resource.RLIMIT_STACK, (maximum_memory_bytes, maximum_memory_bytes))
+            resource.setrlimit(
+                resource.RLIMIT_STACK, (maximum_memory_bytes, maximum_memory_bytes)
+            )
 
     faulthandler.disable()
 

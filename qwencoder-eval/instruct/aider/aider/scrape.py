@@ -4,7 +4,6 @@ import re
 import sys
 
 import pypandoc
-
 from aider import __version__, urls, utils
 from aider.dump import dump  # noqa: F401
 
@@ -126,7 +125,9 @@ class Scraper:
                 r"<p>",
                 r"<a\s+href=",
             ]
-            return any(re.search(pattern, content, re.IGNORECASE) for pattern in html_patterns)
+            return any(
+                re.search(pattern, content, re.IGNORECASE) for pattern in html_patterns
+            )
         return False
 
     # Internals...
@@ -188,7 +189,10 @@ class Scraper:
             with httpx.Client(headers=headers, verify=self.verify_ssl) as client:
                 response = client.get(url)
                 response.raise_for_status()
-                return response.text, response.headers.get("content-type", "").split(";")[0]
+                return (
+                    response.text,
+                    response.headers.get("content-type", "").split(";")[0],
+                )
         except httpx.HTTPError as http_err:
             self.print_error(f"HTTP error occurred: {http_err}")
         except Exception as err:

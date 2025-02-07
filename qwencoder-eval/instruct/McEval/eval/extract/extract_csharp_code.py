@@ -1,16 +1,22 @@
-import os 
-import re 
-import json 
+import json
+import os
+import re
+
 # from humanevalpack import create_all_tasks, create_task
 # create_all_tasks()
 
+
 def extract_csharp_code_block(text, entry_point) -> str:
     re.compile(rf"```(?:[Cc]sharp\n)?.*?({entry_point}.*?)\n```", re.DOTALL)
-    code_block_pattern = re.compile(rf"```(?:[Cc]sharp)?(.*?[^\n]*?{entry_point}.*?)```", re.DOTALL)
+    code_block_pattern = re.compile(
+        rf"```(?:[Cc]sharp)?(.*?[^\n]*?{entry_point}.*?)```", re.DOTALL
+    )
     code_block = code_block_pattern.search(text)
-        
+
     if code_block is None:
-        code_block = re.search(rf"((?:public)?[^\n]*?{entry_point}.*)", text, flags=re.DOTALL)
+        code_block = re.search(
+            rf"((?:public)?[^\n]*?{entry_point}.*)", text, flags=re.DOTALL
+        )
     if code_block is None:
         code_block = re.search(rf"```(?:[Cc]sharp)?(.*?)\n```", text, flags=re.DOTALL)
     if code_block is None:
@@ -21,11 +27,11 @@ def extract_csharp_code_block(text, entry_point) -> str:
 
 def remove_extra_braces(code):
     stack = []
-    result = ''
+    result = ""
     for char in code:
-        if char == '{':
+        if char == "{":
             stack.append(char)
-        elif char == '}':
+        elif char == "}":
             if stack:
                 stack.pop()
             else:
@@ -34,11 +40,15 @@ def remove_extra_braces(code):
         result += char
     return result
 
-def extract_csharp_code(text, item, ):
+
+def extract_csharp_code(
+    text,
+    item,
+):
 
     try:
-        code = extract_csharp_code_block(text, item['entry_point'])
-        
+        code = extract_csharp_code_block(text, item["entry_point"])
+
         # print(code)
         pattern = r"\s*(?:public)*\s*(?:static)*\s*void\s+Main\s*\(.*?\)\s*\{.*?\n\s*\}"
         code = re.sub(pattern, "", code, flags=re.DOTALL)
@@ -54,40 +64,33 @@ def extract_csharp_code(text, item, ):
         import_lines = re.findall(pattern_imports, code, flags=re.MULTILINE)
         # Removing import lines from the code
         code = re.sub(pattern_imports, "", code, flags=re.MULTILINE).strip()
-        
+
         sta_idx = code.index("{")
         code = code[sta_idx:]
-        
-        # return code 
-        full_code = "\n".join(import_lines)+'\n' +item['prompt']+'\n'+ code 
+
+        # return code
+        full_code = "\n".join(import_lines) + "\n" + item["prompt"] + "\n" + code
         eql = 0
         for ch in full_code:
-            if ch == '{':
-                eql+=1
-            elif ch == '}':
-                eql-=1
-        full_code += '\n}'* (eql-1)
-            
-        full_code += '\n' + item['test']
+            if ch == "{":
+                eql += 1
+            elif ch == "}":
+                eql -= 1
+        full_code += "\n}" * (eql - 1)
+
+        full_code += "\n" + item["test"]
     except:
-        return "" 
+        return ""
     # print(full_code)
     return full_code
 
 
-if __name__ == '__main__':
-    items = [json.loads(x) for x in open('completions_C_sharp_humanevalsynthesize.jsonl').readlines() if x]
+if __name__ == "__main__":
+    items = [
+        json.loads(x)
+        for x in open("completions_C_sharp_humanevalsynthesize.jsonl").readlines()
+        if x
+    ]
 
     for item in items:
-        extract_csharp_code(item['raw_generation'][0], item)
-        
-
-
-        
-  
-
-
-
-
-
-
+        extract_csharp_code(item["raw_generation"][0], item)

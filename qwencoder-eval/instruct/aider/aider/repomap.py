@@ -10,15 +10,14 @@ from collections import Counter, defaultdict, namedtuple
 from importlib import resources
 from pathlib import Path
 
+from aider.dump import dump
+from aider.special import filter_important_files
+from aider.utils import Spinner
 from diskcache import Cache
 from grep_ast import TreeContext, filename_to_lang
 from pygments.lexers import guess_lexer_for_filename
 from pygments.token import Token
 from tqdm import tqdm
-
-from aider.dump import dump
-from aider.special import filter_important_files
-from aider.utils import Spinner
 
 # tree_sitter is throwing a FutureWarning
 warnings.simplefilter("ignore", category=FutureWarning)
@@ -276,7 +275,12 @@ class RepoMap:
             )
 
     def get_ranked_tags(
-        self, chat_fnames, other_fnames, mentioned_fnames, mentioned_idents, progress=None
+        self,
+        chat_fnames,
+        other_fnames,
+        mentioned_fnames,
+        mentioned_idents,
+        progress=None,
     ):
         import networkx as nx
 
@@ -397,7 +401,9 @@ class RepoMap:
                 progress()
 
             src_rank = ranked[src]
-            total_weight = sum(data["weight"] for _src, _dst, data in G.out_edges(src, data=True))
+            total_weight = sum(
+                data["weight"] for _src, _dst, data in G.out_edges(src, data=True)
+            )
             # dump(src, src_rank, total_weight)
             for _src, dst, data in G.out_edges(src, data=True):
                 data["rank"] = src_rank * data["weight"] / total_weight
@@ -405,7 +411,9 @@ class RepoMap:
                 ranked_definitions[(dst, ident)] += data["rank"]
 
         ranked_tags = []
-        ranked_definitions = sorted(ranked_definitions.items(), reverse=True, key=lambda x: x[1])
+        ranked_definitions = sorted(
+            ranked_definitions.items(), reverse=True, key=lambda x: x[1]
+        )
 
         # dump(ranked_definitions)
 
@@ -415,11 +423,15 @@ class RepoMap:
                 continue
             ranked_tags += list(definitions.get((fname, ident), []))
 
-        rel_other_fnames_without_tags = set(self.get_rel_fname(fname) for fname in other_fnames)
+        rel_other_fnames_without_tags = set(
+            self.get_rel_fname(fname) for fname in other_fnames
+        )
 
         fnames_already_included = set(rt[0] for rt in ranked_tags)
 
-        top_rank = sorted([(rank, node) for (node, rank) in ranked.items()], reverse=True)
+        top_rank = sorted(
+            [(rank, node) for (node, rank) in ranked.items()], reverse=True
+        )
         for rank, fname in top_rank:
             if fname in rel_other_fnames_without_tags:
                 rel_other_fnames_without_tags.remove(fname)
@@ -466,7 +478,11 @@ class RepoMap:
         # If not in cache or force_refresh is True, generate the map
         start_time = time.time()
         result = self.get_ranked_tags_map_uncached(
-            chat_fnames, other_fnames, max_map_tokens, mentioned_fnames, mentioned_idents
+            chat_fnames,
+            other_fnames,
+            max_map_tokens,
+            mentioned_fnames,
+            mentioned_idents,
         )
         end_time = time.time()
         self.map_processing_time = end_time - start_time
@@ -504,7 +520,9 @@ class RepoMap:
             progress=spin.step,
         )
 
-        other_rel_fnames = sorted(set(self.get_rel_fname(fname) for fname in other_fnames))
+        other_rel_fnames = sorted(
+            set(self.get_rel_fname(fname) for fname in other_fnames)
+        )
         special_fnames = filter_important_files(other_rel_fnames)
         ranked_tags_fnames = set(tag[0] for tag in ranked_tags)
         special_fnames = [fn for fn in special_fnames if fn not in ranked_tags_fnames]
@@ -535,7 +553,9 @@ class RepoMap:
 
             pct_err = abs(num_tokens - max_map_tokens) / max_map_tokens
             ok_err = 0.15
-            if (num_tokens <= max_map_tokens and num_tokens > best_tree_tokens) or pct_err < ok_err:
+            if (
+                num_tokens <= max_map_tokens and num_tokens > best_tree_tokens
+            ) or pct_err < ok_err:
                 best_tree = tree
                 best_tree_tokens = num_tokens
 
@@ -652,7 +672,9 @@ def get_random_color():
 def get_scm_fname(lang):
     # Load the tags queries
     try:
-        return resources.files(__package__).joinpath("queries", f"tree-sitter-{lang}-tags.scm")
+        return resources.files(__package__).joinpath(
+            "queries", f"tree-sitter-{lang}-tags.scm"
+        )
     except KeyError:
         return
 

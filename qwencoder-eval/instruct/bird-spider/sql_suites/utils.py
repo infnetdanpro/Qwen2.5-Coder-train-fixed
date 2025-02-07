@@ -1,6 +1,6 @@
 import json
-from pathlib import Path
 import sqlite3
+from pathlib import Path
 
 SPECIAL_SEPERATOR = "\t----- SQL-EVAL -----\t"
 
@@ -15,7 +15,9 @@ def read_packed_sql(file, db_root):
             sql, db_id = line.split(SPECIAL_SEPERATOR)
 
             sqls.append(sql.strip())
-            db_file = Path(db_root).joinpath(db_id).joinpath(f"{db_id}.sqlite").resolve()
+            db_file = (
+                Path(db_root).joinpath(db_id).joinpath(f"{db_id}.sqlite").resolve()
+            )
             db_files.append(str(db_file))
 
     print(f"Load {len(sqls)} SQLs from {file}")
@@ -34,7 +36,13 @@ def extract_create_table_prompt(db_path, limit_value=3):
         # top_k_row_query = f"SELECT * FROM `{table_name}` LIMIT {limit_value};"
         top_k_row_query = f"SELECT * FROM {table_name} LIMIT {limit_value};"
         try:
-            headers = [x[1] for x in sqlite3.connect(db_path).cursor().execute(table_info_query).fetchall()]
+            headers = [
+                x[1]
+                for x in sqlite3.connect(db_path)
+                .cursor()
+                .execute(table_info_query)
+                .fetchall()
+            ]
         except:
             print("Error:")
             print(table_info_query)
@@ -43,8 +51,12 @@ def extract_create_table_prompt(db_path, limit_value=3):
 
         prompt += create_table_statement + ";\n"
         if limit_value > 0:
-            top_k_rows = sqlite3.connect(db_path).cursor().execute(top_k_row_query).fetchall()
-            prompt += f"/*\n3 example rows:\n{top_k_row_query}\n{'    '.join(headers)}\n"
+            top_k_rows = (
+                sqlite3.connect(db_path).cursor().execute(top_k_row_query).fetchall()
+            )
+            prompt += (
+                f"/*\n3 example rows:\n{top_k_row_query}\n{'    '.join(headers)}\n"
+            )
             for row in top_k_rows:
                 row = [str(x) for x in row]
                 row = [x if x is not None else "" for x in row]

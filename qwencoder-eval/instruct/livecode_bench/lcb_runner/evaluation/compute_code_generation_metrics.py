@@ -8,12 +8,10 @@ import json
 import multiprocessing
 from concurrent.futures import ProcessPoolExecutor, as_completed
 
-
 import numpy as np
-from tqdm import tqdm
-
-from lcb_runner.evaluation.testing_util import run_test
 from lcb_runner.evaluation.pass_k_utils import compute_metrics_from_results
+from lcb_runner.evaluation.testing_util import run_test
+from tqdm import tqdm
 
 
 def check_correctness(sample, generation, timeout, debug=True):

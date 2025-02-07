@@ -2,7 +2,6 @@ import unittest
 from unittest.mock import MagicMock, patch
 
 import httpx
-
 from aider.llm import litellm
 from aider.sendchat import simple_send_with_retries
 
@@ -14,7 +13,9 @@ class PrintCalled(Exception):
 class TestSendChat(unittest.TestCase):
     @patch("litellm.completion")
     @patch("builtins.print")
-    def test_simple_send_with_retries_rate_limit_error(self, mock_print, mock_completion):
+    def test_simple_send_with_retries_rate_limit_error(
+        self, mock_print, mock_completion
+    ):
         mock = MagicMock()
         mock.status_code = 500
 
@@ -35,7 +36,9 @@ class TestSendChat(unittest.TestCase):
 
     @patch("litellm.completion")
     @patch("builtins.print")
-    def test_simple_send_with_retries_connection_error(self, mock_print, mock_completion):
+    def test_simple_send_with_retries_connection_error(
+        self, mock_print, mock_completion
+    ):
         # Set up the mock to raise
         mock_completion.side_effect = [
             httpx.ConnectError("Connection error"),

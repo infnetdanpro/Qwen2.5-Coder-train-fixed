@@ -1,9 +1,8 @@
 import json
 
-from anthropic import HUMAN_PROMPT, AI_PROMPT
-
-from lcb_runner.lm_styles import LMStyle
+from anthropic import AI_PROMPT, HUMAN_PROMPT
 from lcb_runner.benchmarks import TestOutputPredictionProblem
+from lcb_runner.lm_styles import LMStyle
 
 
 class PromptConstants:

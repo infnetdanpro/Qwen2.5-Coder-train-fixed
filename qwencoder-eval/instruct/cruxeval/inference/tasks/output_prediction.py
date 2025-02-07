@@ -2,13 +2,13 @@
 
 from pathlib import Path
 
-from .base import Task
-
 from prompts import (
+    make_cot_output_prompt,
     make_direct_output_prompt,
     make_direct_output_prompt_phind,
-    make_cot_output_prompt,
 )
+
+from .base import Task
 
 
 class OutputPrediction(Task):
@@ -16,7 +16,9 @@ class OutputPrediction(Task):
     answers, generation settings and evaluation methods.
     """
 
-    DATASET_PATH = str(Path(__file__).resolve().parent.parent.parent / "data/cruxeval.jsonl")
+    DATASET_PATH = str(
+        Path(__file__).resolve().parent.parent.parent / "data/cruxeval.jsonl"
+    )
     DATASET_NAME = None
 
     def __init__(self, cot=False, phind_output=False):
@@ -51,7 +53,7 @@ class OutputPrediction(Task):
     def postprocess_generation(self, generation, idx):
         prompt = self.get_prompt(self.get_dataset()[idx])
         assert generation.startswith(prompt)
-        generation = generation[len(prompt):]
+        generation = generation[len(prompt) :]
 
         if self.cot:
             if "[ANSWER]" in generation:

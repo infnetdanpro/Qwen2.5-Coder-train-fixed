@@ -1,16 +1,17 @@
-""" Utilities for running functions in parallel processes. """
-import sys
-import resource
+"""Utilities for running functions in parallel processes."""
+
 import multiprocessing as mp
 import queue
+import resource
+import sys
 import traceback
-from enum import Enum
-from typing import Callable, Optional, Dict, Any, List, Iterator
 from concurrent.futures import TimeoutError
+from enum import Enum
+from typing import Any, Callable, Dict, Iterator, List, Optional
 
 import attrs
 import tqdm
-from pebble import concurrent, ProcessPool, ProcessExpired
+from pebble import ProcessExpired, ProcessPool, concurrent
 
 
 class FuncTimeoutError(TimeoutError):

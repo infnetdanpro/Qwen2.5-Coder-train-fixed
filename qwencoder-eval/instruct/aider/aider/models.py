@@ -11,11 +11,10 @@ from typing import Optional
 
 import json5
 import yaml
-from PIL import Image
-
 from aider import urls
 from aider.dump import dump  # noqa: F401
 from aider.llm import litellm
+from PIL import Image
 
 DEFAULT_MODEL_NAME = "gpt-4o"
 ANTHROPIC_BETA_HEADER = "max-tokens-3-5-sonnet-2024-07-15,prompt-caching-2024-07-31"
@@ -416,9 +415,7 @@ MODEL_SETTINGS = [
 ]
 
 
-model_info_url = (
-    "https://raw.githubusercontent.com/BerriAI/litellm/main/model_prices_and_context_window.json"
-)
+model_info_url = "https://raw.githubusercontent.com/BerriAI/litellm/main/model_prices_and_context_window.json"
 
 
 def get_model_flexible(model, content):
@@ -443,7 +440,9 @@ def get_model_info(model):
 
         current_time = time.time()
         cache_age = (
-            current_time - cache_file.stat().st_mtime if cache_file.exists() else float("inf")
+            current_time - cache_file.stat().st_mtime
+            if cache_file.exists()
+            else float("inf")
         )
 
         if cache_age < 60 * 60 * 24:
@@ -689,14 +688,17 @@ def register_models(model_settings_fnames):
             for model_settings_dict in model_settings_list:
                 model_settings = ModelSettings(**model_settings_dict)
                 existing_model_settings = next(
-                    (ms for ms in MODEL_SETTINGS if ms.name == model_settings.name), None
+                    (ms for ms in MODEL_SETTINGS if ms.name == model_settings.name),
+                    None,
                 )
 
                 if existing_model_settings:
                     MODEL_SETTINGS.remove(existing_model_settings)
                 MODEL_SETTINGS.append(model_settings)
         except Exception as e:
-            raise Exception(f"Error loading model settings from {model_settings_fname}: {e}")
+            raise Exception(
+                f"Error loading model settings from {model_settings_fname}: {e}"
+            )
         files_loaded.append(model_settings_fname)
 
     return files_loaded
@@ -758,7 +760,9 @@ def sanity_check_model(io, model):
 
     elif not model.keys_in_environment:
         show = True
-        io.tool_warning(f"Warning for {model}: Unknown which environment variables are required.")
+        io.tool_warning(
+            f"Warning for {model}: Unknown which environment variables are required."
+        )
 
     if not model.info:
         show = True

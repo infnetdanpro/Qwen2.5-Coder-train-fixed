@@ -14,7 +14,10 @@ from generator import Generator
 from tasks import ALL_TASKS
 from transformers import AutoTokenizer, HfArgumentParser
 from vllm import LLM
-from vllm.distributed.parallel_state import destroy_distributed_environment, destroy_model_parallel
+from vllm.distributed.parallel_state import (
+    destroy_distributed_environment,
+    destroy_model_parallel,
+)
 
 
 class MultiChoice:
@@ -43,7 +46,12 @@ def parse_args():
         default="codeparrot/codeparrot-small",
         help="Model to evaluate, provide a repo name in Hugging Face hub or a local path",
     )
-    parser.add_argument("--tensor_parallel_size", type=int, default=1, help="number of tensor parallel replicas")
+    parser.add_argument(
+        "--tensor_parallel_size",
+        type=int,
+        default=1,
+        help="number of tensor parallel replicas",
+    )
     parser.add_argument(
         "--revision",
         default=None,
@@ -153,7 +161,9 @@ def parse_args():
 
     args.precision = precision_map[args.precision]
     args.tasks = pattern_match(args.tasks.split(","), ALL_TASKS)
-    assert len(args.tasks) == 1, f"Only one task is supported at the moment, you gave {args.tasks}"
+    assert (
+        len(args.tasks) == 1
+    ), f"Only one task is supported at the moment, you gave {args.tasks}"
     args.task_name = args.tasks[0]
 
     assert args.instruction_tokens is None, "Instruction tokens are not supported yet"

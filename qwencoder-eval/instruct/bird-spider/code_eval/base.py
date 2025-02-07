@@ -28,12 +28,22 @@ class Task(ABC):
             print(f"{self.DATASET_PATH = }")
             print(f"{self.DATASET_NAME = }")
             if self.DATASET_PATH.endswith("json"):
-                self.dataset = load_dataset("json", data_files=self.DATASET_PATH, cache_dir="/root/.cache/orz-plus")
+                self.dataset = load_dataset(
+                    "json",
+                    data_files=self.DATASET_PATH,
+                    cache_dir="/root/.cache/orz-plus",
+                )
             else:
-                self.dataset = load_dataset(path=self.DATASET_PATH, name=self.DATASET_NAME, cache_dir="./hf_cache")
+                self.dataset = load_dataset(
+                    path=self.DATASET_PATH,
+                    name=self.DATASET_NAME,
+                    cache_dir="./hf_cache",
+                )
         except Exception as e:
             raise e
-            warn(f"Loading the dataset failed with {str(e)}. This task will use a locally downloaded dataset, not from the HF hub.")
+            warn(
+                f"Loading the dataset failed with {str(e)}. This task will use a locally downloaded dataset, not from the HF hub."
+            )
 
     @abstractmethod
     def get_dataset(self):

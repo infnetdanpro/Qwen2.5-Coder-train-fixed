@@ -3,9 +3,8 @@ import sys
 import time
 from pathlib import Path
 
-import packaging.version
-
 import aider
+import packaging.version
 from aider import utils
 from aider.dump import dump  # noqa: F401
 
@@ -84,9 +83,9 @@ def check_version(io, just_check=False, verbose=False):
             io.tool_output(f"Current version: {current_version}")
             io.tool_output(f"Latest version: {latest_version}")
 
-        is_update_available = packaging.version.parse(latest_version) > packaging.version.parse(
-            current_version
-        )
+        is_update_available = packaging.version.parse(
+            latest_version
+        ) > packaging.version.parse(current_version)
     except Exception as err:
         io.tool_error(f"Error checking pypi for new version: {err}")
         return False

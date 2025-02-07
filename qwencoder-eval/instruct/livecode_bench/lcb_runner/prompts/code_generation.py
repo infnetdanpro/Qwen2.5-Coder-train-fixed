@@ -1,14 +1,15 @@
 import json
 
 try:
-    from anthropic import HUMAN_PROMPT, AI_PROMPT
+    from anthropic import AI_PROMPT, HUMAN_PROMPT
 except ImportError:
     HUMAN_PROMPT = None
     AI_PROMPT = None
 
-from lcb_runner.lm_styles import LMStyle
-from lcb_runner.benchmarks.code_generation import CodeGenerationProblem
 import os
+
+from lcb_runner.benchmarks.code_generation import CodeGenerationProblem
+from lcb_runner.lm_styles import LMStyle
 
 
 class PromptConstants:
@@ -16,7 +17,9 @@ class PromptConstants:
 
     SYSTEM_MESSAGE_DEEPSEEK = f"You are an AI programming assistant, utilizing the DeepSeek Coder model, developed by DeepSeek Company, and you answer questions related to computer science."
 
-    SYSTEM_MESSAGE_CODEQWEN = f"<|im_start|>system\nYou are a helpful assistant.<|im_end|>\n<|im_start|>user"
+    SYSTEM_MESSAGE_CODEQWEN = (
+        f"<|im_start|>system\nYou are a helpful assistant.<|im_end|>\n<|im_start|>user"
+    )
 
     SYSTEM_MESSAGE_MAGIC = f"You are an exceptionally intelligent coding assistant that consistently delivers accurate and reliable responses to user instructions.\n\n@@ Instruction\n"
 
@@ -79,17 +82,14 @@ def get_codeqwen_question_template_answer(question: CodeGenerationProblem):
     prompt = "You will be given a question (problem specification) and will generate a correct Python program that matches the specification and passes all tests. You will NOT return anything except for the program.\n\n"
     prompt += f"Question: {question.question_content}\n\n"
     if question.starter_code:
-        prompt += (
-            f"{PromptConstants.FORMATTING_MESSAGE_WITH_STARTER_CODE}\n"
-        )
+        prompt += f"{PromptConstants.FORMATTING_MESSAGE_WITH_STARTER_CODE}\n"
         prompt += f"```python\n{question.starter_code}\n```\n\n<|im_end|>\n"
     else:
-        prompt += (
-            f"{PromptConstants.FORMATTING_WITHOUT_STARTER_CODE}\n"
-        )
+        prompt += f"{PromptConstants.FORMATTING_WITHOUT_STARTER_CODE}\n"
         prompt += f"```python\n# YOUR CODE HERE\n```\n\n<|im_end|>\n"
     prompt += f"<|im_start|>assistant\n"
     return prompt
+
 
 def get_magicoder_question_template_answer(question: CodeGenerationProblem):
     prompt = f"You will be given a question (problem specification) and will generate a correct Python program that matches the specification and passes all tests. You will NOT return anything except for the program.\n\n"
@@ -133,10 +133,14 @@ def get_phind_question_template_answer(question: CodeGenerationProblem):
     return prompt
 
 
-with open(f"{os.path.dirname(os.path.abspath(__file__))}/few_shot_examples/generation/func.json") as f:
+with open(
+    f"{os.path.dirname(os.path.abspath(__file__))}/few_shot_examples/generation/func.json"
+) as f:
     func = json.load(f)
 
-with open(f"{os.path.dirname(os.path.abspath(__file__))}/few_shot_examples/generation/stdin.json") as f:
+with open(
+    f"{os.path.dirname(os.path.abspath(__file__))}/few_shot_examples/generation/stdin.json"
+) as f:
     stdin = json.load(f)
 
 

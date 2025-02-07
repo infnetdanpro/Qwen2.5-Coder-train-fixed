@@ -1,7 +1,7 @@
-from typing import Tuple, List, Set
-from itertools import product
-from collections import defaultdict
 import random
+from collections import defaultdict
+from itertools import product
+from typing import List, Set, Tuple
 
 
 def permute_tuple(element: Tuple, perm: Tuple) -> Tuple:

@@ -19,14 +19,13 @@ import lox
 import pandas as pd
 import prompts
 import typer
-from dotenv import load_dotenv
-from plots import plot_refactoring
-from rich.console import Console
-
 from aider import models
 from aider.coders import Coder
 from aider.dump import dump  # noqa: F401
 from aider.io import InputOutput
+from dotenv import load_dotenv
+from plots import plot_refactoring
+from rich.console import Console
 
 BENCHMARK_DNAME = Path(os.environ.get("AIDER_BENCHMARK_DIR", "tmp.benchmarks"))
 
@@ -121,23 +120,46 @@ def main(
         help="Maximum number of apply update errors before stopping the test",
     ),
     keywords: str = typer.Option(
-        None, "--keywords", "-k", help="Only run tests that contain keywords (comma sep)"
+        None,
+        "--keywords",
+        "-k",
+        help="Only run tests that contain keywords (comma sep)",
     ),
     clean: bool = typer.Option(
-        False, "--clean", "-c", help="Discard the existing testdir and make a clean copy"
+        False,
+        "--clean",
+        "-c",
+        help="Discard the existing testdir and make a clean copy",
     ),
-    cont: bool = typer.Option(False, "--cont", help="Continue the (single) matching testdir"),
-    make_new: bool = typer.Option(False, "--new", "-n", help="Make a new dated testdir"),
-    no_unit_tests: bool = typer.Option(False, "--no-unit-tests", help="Do not run unit tests"),
+    cont: bool = typer.Option(
+        False, "--cont", help="Continue the (single) matching testdir"
+    ),
+    make_new: bool = typer.Option(
+        False, "--new", "-n", help="Make a new dated testdir"
+    ),
+    no_unit_tests: bool = typer.Option(
+        False, "--no-unit-tests", help="Do not run unit tests"
+    ),
     no_aider: bool = typer.Option(False, "--no-aider", help="Do not run aider"),
     verbose: bool = typer.Option(False, "--verbose", "-v", help="Verbose output"),
     stats_only: bool = typer.Option(
-        False, "--stats", "-s", help="Do not run tests, just collect stats on completed tests"
+        False,
+        "--stats",
+        "-s",
+        help="Do not run tests, just collect stats on completed tests",
     ),
-    diffs_only: bool = typer.Option(False, "--diffs", help="Just diff the provided stats dirs"),
-    tries: int = typer.Option(2, "--tries", "-r", help="Number of tries for running tests"),
-    threads: int = typer.Option(1, "--threads", "-t", help="Number of threads to run in parallel"),
-    num_tests: int = typer.Option(-1, "--num-tests", "-n", help="Number of tests to run"),
+    diffs_only: bool = typer.Option(
+        False, "--diffs", help="Just diff the provided stats dirs"
+    ),
+    tries: int = typer.Option(
+        2, "--tries", "-r", help="Number of tries for running tests"
+    ),
+    threads: int = typer.Option(
+        1, "--threads", "-t", help="Number of threads to run in parallel"
+    ),
+    num_tests: int = typer.Option(
+        -1, "--num-tests", "-n", help="Number of tests to run"
+    ),
     exercises_dir: str = typer.Option(
         EXERCISES_DIR_DEFAULT, "--exercises-dir", help="Directory with exercise files"
     ),
@@ -181,7 +203,10 @@ def main(
         dir_files = set(fn.name for fn in dirname.glob("*"))
         original_files = set(fn.name for fn in original_dname.glob("*"))
         if dir_files != original_files:
-            print("ERROR: will not delete dir that does not look like original tests", dirname)
+            print(
+                "ERROR: will not delete dir that does not look like original tests",
+                dirname,
+            )
             return
 
         dest = dirname.parent / "OLD" / dirname.name
@@ -200,7 +225,9 @@ def main(
 
     if keywords:
         keywords = keywords.split(",")
-        test_dnames = [dn for dn in test_dnames for keyword in keywords if keyword in dn]
+        test_dnames = [
+            dn for dn in test_dnames for keyword in keywords if keyword in dn
+        ]
 
     random.shuffle(test_dnames)
     if num_tests > 0:
@@ -290,7 +317,9 @@ def show_diffs(dirnames):
 
 def load_results(dirname):
     dirname = Path(dirname)
-    all_results = [json.loads(fname.read_text()) for fname in dirname.glob("*/.aider.results.json")]
+    all_results = [
+        json.loads(fname.read_text()) for fname in dirname.glob("*/.aider.results.json")
+    ]
     return all_results
 
 
@@ -301,7 +330,9 @@ def summarize_results(dirname):
     res.total_tests = len(list(Path(dirname).glob("*")))
 
     try:
-        tries = max(len(results.get("tests_outcomes", [])) for results in all_results if results)
+        tries = max(
+            len(results.get("tests_outcomes", [])) for results in all_results if results
+        )
     except ValueError:
         tries = 0
 
@@ -466,7 +497,11 @@ def get_replayed_content(replay_dname, test_dname):
     return res
 
     res = res.splitlines(keepends=True)
-    res = [line for line in res if not line.startswith("> ") and not line.startswith("#### ")]
+    res = [
+        line
+        for line in res
+        if not line.startswith("> ") and not line.startswith("#### ")
+    ]
     return "".join(res)
 
 
@@ -626,7 +661,9 @@ def run_test_real(
         errors = errors.splitlines()
 
         syntax_errors += sum(1 for line in errors if line.startswith("SyntaxError"))
-        indentation_errors += sum(1 for line in errors if line.startswith("IndentationError"))
+        indentation_errors += sum(
+            1 for line in errors if line.startswith("IndentationError")
+        )
 
         print(errors[-1])
         errors = errors[:50]

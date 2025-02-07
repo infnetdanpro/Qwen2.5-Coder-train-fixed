@@ -1,6 +1,6 @@
+import json
 import os
 import re
-import json
 
 
 def extract_lua_code(text, item):
@@ -35,7 +35,7 @@ def extract_lua_code(text, item):
 
     pattern = r"\-\-\[\[.*?\]\]\-\-"
     code = re.sub(pattern, "", code, flags=re.DOTALL)
-    
+
     # Lua中打印使用print
     print_regex = re.compile(r"print\(.*?\)\s*\n", re.DOTALL)
 
@@ -44,7 +44,6 @@ def extract_lua_code(text, item):
 
     pattern = r"function\s+check\s*\(.*?\).*end.*check\(.*\)"
     code = re.sub(pattern, "", code, flags=re.DOTALL)
-
 
     prompt = item["prompt"].split("\n")
     prompt = "\n".join(prompt[:-1])

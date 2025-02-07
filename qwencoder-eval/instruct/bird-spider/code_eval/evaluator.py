@@ -4,7 +4,7 @@ import os
 import warnings
 
 from code_eval import tasks
-from code_eval.generation import vllm_generation, openai_generation
+from code_eval.generation import openai_generation, vllm_generation
 
 _WARNING = """
 ################################################################################
@@ -24,9 +24,9 @@ Once you have read this disclaimer and taken appropriate precautions, set the ar
 ################################################################################\
 """
 
-from vllm import LLM
-from transformers import AutoTokenizer
 from openai import AsyncOpenAI
+from transformers import AutoTokenizer
+from vllm import LLM
 
 
 class Evaluator:
@@ -38,13 +38,15 @@ class Evaluator:
                 model=args.model,
                 max_model_len=8192,
                 trust_remote_code=True,
-                distributed_executor_backend='ray',
+                distributed_executor_backend="ray",
                 tensor_parallel_size=int(os.getenv("VLLM_N_GPUS", 1)),
             )
             self.tokenizer = AutoTokenizer.from_pretrained(args.model)
         elif args.backend == "openai":
             self.model = AsyncOpenAI(
-                base_url=os.getenv("OPENAI_API_BASE",),
+                base_url=os.getenv(
+                    "OPENAI_API_BASE",
+                ),
                 api_key=os.getenv("OPENAI_API_KEY"),
             )
             self.tokenizer = None
@@ -61,11 +63,19 @@ class Evaluator:
         dataset = task.get_dataset()
         # if args.limit is None, use all samples
         n_tasks = self.args.limit if self.args.limit else len(dataset)
-        references = [task.get_reference(dataset[i]) for i in range(self.args.limit_start, self.args.limit_start + n_tasks)]
+        references = [
+            task.get_reference(dataset[i])
+            for i in range(self.args.limit_start, self.args.limit_start + n_tasks)
+        ]
 
         if self.args.check_references:
             if "get_solution" in inspect.signature(task.get_reference).parameters:
-                solutions = [[task.get_reference(dataset[i], get_solution=True)] for i in range(self.args.limit_start, self.args.limit_start + n_tasks)]
+                solutions = [
+                    [task.get_reference(dataset[i], get_solution=True)]
+                    for i in range(
+                        self.args.limit_start, self.args.limit_start + n_tasks
+                    )
+                ]
             else:
                 solutions = [[ref] for ref in references]
             return solutions, references
@@ -81,14 +91,17 @@ class Evaluator:
             )
         elif self.args.backend == "openai":
             import asyncio
-            generations = asyncio.run(openai_generation(
-                task,
-                dataset,
-                self.model,
-                self.tokenizer,
-                n_tasks=n_tasks,
-                args=self.args,
-            ),)
+
+            generations = asyncio.run(
+                openai_generation(
+                    task,
+                    dataset,
+                    self.model,
+                    self.tokenizer,
+                    n_tasks=n_tasks,
+                    args=self.args,
+                ),
+            )
 
         if self.args.do_sample:
             expected_generated = self.args.n_samples
@@ -97,7 +110,9 @@ class Evaluator:
 
         if len(generations[0]) > expected_generated:
             generations = [l[:expected_generated] for l in generations]
-            warnings.warn(f"Removing extra predictions from {len(generations[0])} to only keep nsamples={expected_generated}")
+            warnings.warn(
+                f"Removing extra predictions from {len(generations[0])} to only keep nsamples={expected_generated}"
+            )
         return generations, references
 
     def evaluate(self, task_name):
@@ -113,7 +128,9 @@ class Evaluator:
                     with open(self.args.save_generations_path, "w") as fp:
                         generations_line = "\n".join(i[0] for i in generations)
                         json.dump(generations, fp)
-                        print(f"generations were saved at {self.args.save_generations_path}")
+                        print(
+                            f"generations were saved at {self.args.save_generations_path}"
+                        )
                 if self.args.save_references:
                     with open("references.json", "w") as fp:
                         json.dump(references, fp)

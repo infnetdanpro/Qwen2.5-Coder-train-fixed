@@ -1,10 +1,10 @@
-import json
-import zlib
-import pickle
 import base64
-from enum import Enum
-from datetime import datetime
+import json
+import pickle
+import zlib
 from dataclasses import dataclass
+from datetime import datetime
+from enum import Enum
 
 from datasets import load_dataset
 
@@ -96,7 +96,9 @@ class CodeGenerationProblem:
             "code_list": code_list,
         }
 
-    def insert_output_evaluation(self, output_list: list[str], code_list: list[str], graded_list: list[bool]) -> dict:
+    def insert_output_evaluation(
+        self, output_list: list[str], code_list: list[str], graded_list: list[bool]
+    ) -> dict:
         output = self.insert_output(output_list, code_list)
         output["graded_list"] = graded_list
         output["pass@1"] = graded_list.count(True) / len(graded_list)
@@ -106,15 +108,23 @@ class CodeGenerationProblem:
         return {
             "input_output": json.dumps(
                 {
-                    "inputs": [t.input for t in self.public_test_cases + self.private_test_cases],
-                    "outputs": [t.output for t in self.public_test_cases + self.private_test_cases],
+                    "inputs": [
+                        t.input
+                        for t in self.public_test_cases + self.private_test_cases
+                    ],
+                    "outputs": [
+                        t.output
+                        for t in self.public_test_cases + self.private_test_cases
+                    ],
                     "fn_name": self.metadata.get("func_name", None),
                 }
             ),
         }
 
 
-def load_code_generation_dataset(start_date=None, end_date=None) -> list[CodeGenerationProblem]:
+def load_code_generation_dataset(
+    start_date=None, end_date=None
+) -> list[CodeGenerationProblem]:
     dataset = load_dataset(
         "./code_generation_lite",
         trust_remote_code=True,

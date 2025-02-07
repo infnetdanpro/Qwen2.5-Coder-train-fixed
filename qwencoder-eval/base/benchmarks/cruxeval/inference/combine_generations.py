@@ -3,7 +3,11 @@
 import json
 import os
 
-dirs = [d for d in next(os.walk('model_generations_raw'))[1] if ("input" in d or "output" in d)]
+dirs = [
+    d
+    for d in next(os.walk("model_generations_raw"))[1]
+    if ("input" in d or "output" in d)
+]
 
 for dir in dirs:
     new_dir = os.path.join("../model_generations", dir)
@@ -18,7 +22,7 @@ for dir in dirs:
             for input_json in files:
                 if input_json == "generations.json" or "raw" in input_json:
                     continue
-                
+
                 count += 1
                 with open(os.path.join(dir, input_json), "r") as fp:
                     input_json = json.load(fp)
@@ -32,8 +36,10 @@ for dir in dirs:
             print(dir, f"{count} files", len(combined_json))
             assert len(combined_json) == 800
 
-            try: os.makedirs(new_dir)
-            except: pass
+            try:
+                os.makedirs(new_dir)
+            except:
+                pass
 
             output_json = "generations.json"
             with open(os.path.join(new_dir, output_json), "w") as fp:
@@ -45,7 +51,7 @@ for dir in dirs:
             for input_json in files:
                 if input_json == "generations_raw.json" or "raw" not in input_json:
                     continue
-                
+
                 count += 1
                 with open(os.path.join(dir, input_json), "r") as fp:
                     input_json = json.load(fp)

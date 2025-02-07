@@ -26,8 +26,10 @@ class SqlTaskChatCoTBase(Task):
 
     def get_prompt(self, doc):
         # return doc["instruction"] + "\nPlease output only the final SQL query, starts with keyword `SELECT`."
-        return doc["instruction"] + "\nPlease think step-by-step and output the final SQL query between [SQL] and [/SQL]."
-
+        return (
+            doc["instruction"]
+            + "\nPlease think step-by-step and output the final SQL query between [SQL] and [/SQL]."
+        )
 
     def get_reference(self, doc):
         return doc["output"]
@@ -52,8 +54,8 @@ class SqlTaskChatCoTBase(Task):
         if idx == 0:
             print(f"[ORIGINAL]: {generation}")
 
-        generation = generation.rsplit('[SQL]', 1)[-1]
-        generation = generation.split('[/SQL]', 1)[0]
+        generation = generation.rsplit("[SQL]", 1)[-1]
+        generation = generation.split("[/SQL]", 1)[0]
         if idx == 0:
             print(f"[CUTTED]: {generation}")
         generation = generation.replace("\n", " ")

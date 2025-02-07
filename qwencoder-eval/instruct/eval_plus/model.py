@@ -9,7 +9,6 @@ from stop_sequencer import StopSequencer
 from transformers import AutoModelForCausalLM, AutoTokenizer
 from vllm import LLM, SamplingParams
 
-
 EOS = [
     "<|endoftext|>",
     "<|endofmask|>",
@@ -17,7 +16,7 @@ EOS = [
     "\nif __name__",
     "\ndef main(",
     "\nprint(",
-    "\n#"
+    "\n#",
 ]
 
 
@@ -51,7 +50,9 @@ class DecoderBase(ABC):
                 self.eos += ['\n"""', "\nassert"]
 
     @abstractmethod
-    def codegen(self, prompt: str, do_sample: bool = True, num_samples: int = 200) -> List[str]:
+    def codegen(
+        self, prompt: str, do_sample: bool = True, num_samples: int = 200
+    ) -> List[str]:
         pass
 
     def __repr__(self) -> str:
@@ -62,20 +63,22 @@ class DecoderBase(ABC):
 
 
 class VLlmDecoder(DecoderBase):
-    def __init__(self, name: str, tensor_parallel_size = 1, **kwargs) -> None:
+    def __init__(self, name: str, tensor_parallel_size=1, **kwargs) -> None:
         super().__init__(name, **kwargs)
 
         kwargs = {
-            "tensor_parallel_size": tensor_parallel_size, #int(os.getenv("VLLM_N_GPUS", "1"))
+            "tensor_parallel_size": tensor_parallel_size,  # int(os.getenv("VLLM_N_GPUS", "1"))
             "dtype": self.dtype,
             "trust_remote_code": self.trust_remote_code,
             "enforce_eager": True,
-            "gpu_memory_utilization": 0.98
+            "gpu_memory_utilization": 0.98,
         }
         print(kwargs)
         self.llm = LLM(model=name, max_model_len=1536, **kwargs)
 
-    def codegen(self, prompt: str, do_sample: bool = True, num_samples: int = 200) -> List[str]:
+    def codegen(
+        self, prompt: str, do_sample: bool = True, num_samples: int = 200
+    ) -> List[str]:
         if do_sample:
             assert self.temperature > 0, "Temperature must be greater than 0!"
         batch_size = min(self.batch_size, num_samples)
@@ -108,7 +111,9 @@ class VLlmAWQDecoder(DecoderBase):
 
         self.llm = LLM(model=name, max_model_len=2048, **kwargs)
 
-    def codegen(self, prompt: str, do_sample: bool = True, num_samples: int = 200) -> List[str]:
+    def codegen(
+        self, prompt: str, do_sample: bool = True, num_samples: int = 200
+    ) -> List[str]:
         if do_sample:
             assert self.temperature > 0, "Temperature must be greater than 0!"
         batch_size = min(self.batch_size, num_samples)
@@ -134,7 +139,9 @@ class AWQChatML(VLlmAWQDecoder):
         super().__init__(name, **kwargs)
         self.eos += ["\n```"]
 
-    def codegen(self, prompt: str, do_sample: bool = True, num_samples: int = 200) -> List[str]:
+    def codegen(
+        self, prompt: str, do_sample: bool = True, num_samples: int = 200
+    ) -> List[str]:
         if do_sample:
             assert self.temperature > 0, "Temperature must be greater than 0!"
 
@@ -158,7 +165,9 @@ class ChatML(VLlmDecoder):
         super().__init__(name, tensor_parallel_size, **kwargs)
         self.eos += ["\n```"]
 
-    def codegen(self, prompt: str, do_sample: bool = True, num_samples: int = 200) -> List[str]:
+    def codegen(
+        self, prompt: str, do_sample: bool = True, num_samples: int = 200
+    ) -> List[str]:
         if do_sample:
             assert self.temperature > 0, "Temperature must be greater than 0!"
 
@@ -183,7 +192,7 @@ def make_model(
     batch_size: int = 1,
     temperature: float = 0.8,
     dataset: str = None,
-    tensor_parallel_size = 1
+    tensor_parallel_size=1,
 ):
     if model_type == "codeqwen" or model_type == "qwen2":
         if "chat" in model_size.lower():
@@ -193,7 +202,7 @@ def make_model(
                     name=model_path,
                     temperature=temperature,
                     max_new_tokens=2048,
-                    tensor_parallel_size = tensor_parallel_size
+                    tensor_parallel_size=tensor_parallel_size,
                 )
             else:
                 return ChatML(
@@ -201,7 +210,7 @@ def make_model(
                     name=model_path,
                     temperature=temperature,
                     max_new_tokens=2048,
-                    tensor_parallel_size = tensor_parallel_size
+                    tensor_parallel_size=tensor_parallel_size,
                 )
         else:
             return VLlmDecoder(
@@ -209,7 +218,7 @@ def make_model(
                 name=model_path,
                 temperature=temperature,
                 dataset=dataset,
-                tensor_parallel_size = tensor_parallel_size
+                tensor_parallel_size=tensor_parallel_size,
             )
     else:
         raise ValueError(f"Invalid model name: {model_type}@{model_size}")

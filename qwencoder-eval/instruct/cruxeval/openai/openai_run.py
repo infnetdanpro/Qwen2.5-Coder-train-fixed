@@ -1,25 +1,28 @@
 # Copyright (c) Meta Platforms, Inc. and affiliates.
 
-import os
 import json
+import os
 from itertools import product
 
 from openai_prompt import (
-    batch_prompt_direct_input,
     batch_prompt_cot_input,
-    batch_prompt_direct_output,
     batch_prompt_cot_output,
+    batch_prompt_direct_input,
+    batch_prompt_direct_output,
 )
+
 
 def run_openai(model, mode, cot, temperature):
     dataset = [json.loads(l) for l in open("../data/cruxeval.jsonl", "r").readlines()]
 
-    if mode == "input": prompts = [(data["code"], data["output"]) for data in dataset] 
-    else: prompts = [(data["code"], data["input"]) for data in dataset] 
-    
-    if cot: 
+    if mode == "input":
+        prompts = [(data["code"], data["output"]) for data in dataset]
+    else:
+        prompts = [(data["code"], data["input"]) for data in dataset]
+
+    if cot:
         max_tokens = 1000
-    else: 
+    else:
         max_tokens = 100
 
     fn = {
@@ -42,15 +45,19 @@ def run_openai(model, mode, cot, temperature):
     json.dump(outputs_dict, open(save_dir, "w"))
     return outputs
 
+
 def get_save_dir(mode, model, cot, temperature):
-    if cot: 
+    if cot:
         base_dir = f"../model_generations/{model}+cot_temp{temperature}_{mode}"
     else:
         base_dir = f"../model_generations/{model}_temp{temperature}_{mode}"
-    try: os.makedirs(base_dir)
-    except: pass
+    try:
+        os.makedirs(base_dir)
+    except:
+        pass
     return os.path.join(base_dir, "generations.json")
-        
+
+
 if __name__ == "__main__":
     models = ["gpt-3.5-turbo-0613", "gpt-4-0613"]
     modes = ["input", "output"]
@@ -58,4 +65,4 @@ if __name__ == "__main__":
     temperatures = [0.2, 0.8]
     for model, mode, cot, temperature in product(models, modes, cots, temperatures):
         run_openai(model, mode, cot, temperature)
-        break # comment out to run the whole thing $$
+        break  # comment out to run the whole thing $$

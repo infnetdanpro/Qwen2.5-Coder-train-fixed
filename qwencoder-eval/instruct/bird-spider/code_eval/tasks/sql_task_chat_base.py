@@ -25,7 +25,10 @@ class SqlTaskChatBase(Task):
         return self.datasets
 
     def get_prompt(self, doc):
-        return doc["instruction"] + "\nPlease output only the final SQL query, starts with keyword `SELECT`."
+        return (
+            doc["instruction"]
+            + "\nPlease output only the final SQL query, starts with keyword `SELECT`."
+        )
 
     def get_reference(self, doc):
         return doc["output"]

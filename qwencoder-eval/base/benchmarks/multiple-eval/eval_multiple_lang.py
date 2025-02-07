@@ -7,7 +7,10 @@ from pathlib import Path
 import torch
 from humaneval_qwen2_base_multilangs import HumanEval as MultiPLERunner
 from vllm import LLM
-from vllm.distributed.parallel_state import destroy_distributed_environment, destroy_model_parallel
+from vllm.distributed.parallel_state import (
+    destroy_distributed_environment,
+    destroy_model_parallel,
+)
 
 DATA_ROOT = str(Path(__file__).joinpath("../data").resolve())
 print(f"{DATA_ROOT = }")
@@ -18,7 +21,12 @@ if __name__ == "__main__":
     parser.add_argument("--modelpath", type=str, default="")
     parser.add_argument("--tp", default=1, type=int)
     parser.add_argument("--just_eval", action="store_true", default=False)
-    parser.add_argument("--langs", type=str, nargs="+", default=["java", "cpp", "js", "cs", "php", "sh", "ts"])
+    parser.add_argument(
+        "--langs",
+        type=str,
+        nargs="+",
+        default=["java", "cpp", "js", "cs", "php", "sh", "ts"],
+    )
     parser.add_argument("--no_batching", action="store_true", default=False)
     parser.add_argument("--no_new_line_at_last", action="store_true", default=False)
     args = parser.parse_args()
@@ -55,7 +63,9 @@ if __name__ == "__main__":
         print(f"Skip model loading, just eval...")
 
     os.environ["TOKENIZERS_PARALLELISM"] = "false"
-    aggr_result = evaluator.eval_model_multiple(model, langs=args.langs, just_eval=args.just_eval)
+    aggr_result = evaluator.eval_model_multiple(
+        model, langs=args.langs, just_eval=args.just_eval
+    )
 
     res_file = Path(logdir).joinpath("results.json")
     with Path(res_file).open("w") as f:

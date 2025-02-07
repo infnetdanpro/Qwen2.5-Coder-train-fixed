@@ -61,12 +61,16 @@ class TokenizedDataset(IterableDataset):
                     # Infilling mode
                     infill.append(True)
                     instruction.append(False)
-                    prompt = self._make_infill_prompt(**prompt_contents, preprefix=self.prefix)
+                    prompt = self._make_infill_prompt(
+                        **prompt_contents, preprefix=self.prefix
+                    )
                 elif set(prompt_contents.keys()) == {"instruction", "context"}:
                     # Instruction-tuning mode
                     instruction.append(True)
                     infill.append(False)
-                    prompt = self._make_instruction_prompt(**prompt_contents, prefix=self.prefix)
+                    prompt = self._make_instruction_prompt(
+                        **prompt_contents, prefix=self.prefix
+                    )
             else:
                 raise ValueError(f"Unsupported prompt format: {type(prompt_contents)}")
             prompts.append(prompt)
@@ -77,7 +81,9 @@ class TokenizedDataset(IterableDataset):
                 prompts_encoder.append(prompt_encoder)
 
         if not len(set(infill)) == 1 or not len(set(instruction)) == 1:
-            raise ValueError("Mixed infill/instruction and completion prompts are not supported.")
+            raise ValueError(
+                "Mixed infill/instruction and completion prompts are not supported."
+            )
         global INFILL_MODE
         global INSTRUCTION_MODE
         INFILL_MODE = infill[0]
@@ -119,7 +125,9 @@ class TokenizedDataset(IterableDataset):
                         "ids_encoder": outputs_encoder.input_ids[sample],
                         "task_id": sample,
                         "input_len": outputs.attention_mask[sample].sum(),
-                        "input_len_encoder": outputs_encoder.attention_mask[sample].sum(),
+                        "input_len_encoder": outputs_encoder.attention_mask[
+                            sample
+                        ].sum(),
                     }
                 else:
                     yield {
@@ -146,13 +154,19 @@ class TokenizedDataset(IterableDataset):
     def _make_instruction_prompt(self, instruction, context, prefix=""):
         """Make a prompt for instruction-tuning. Delimit instruction and context with specific tokens if provided."""
         if not self.instruction_tokens:
-            warnings.warn("Instruction-tuning tokens are not provided for an instruction-tuning task, we will leave them empty.")
+            warnings.warn(
+                "Instruction-tuning tokens are not provided for an instruction-tuning task, we will leave them empty."
+            )
             user_token, end_token, assistant_token = "", "", "\n"
         else:
             user_token, end_token, assistant_token = self.instruction_tokens
             if not user_token or not assistant_token or not end_token:
-                warnings.warn("Instruction-tuning tokens provided but one or more are empty. Ignore warning if this was intended")
-        prompt = prefix + user_token + instruction + end_token + assistant_token + context
+                warnings.warn(
+                    "Instruction-tuning tokens provided but one or more are empty. Ignore warning if this was intended"
+                )
+        prompt = (
+            prefix + user_token + instruction + end_token + assistant_token + context
+        )
 
         return prompt
 
@@ -243,7 +257,9 @@ class ChatTokenizedDataset(IterableDataset):
 
         for sample in range(self.n_tasks):
             input_str = self.tokenizer.decode(ds_input_ids[sample])
-            self.dataset[self.limit_start + sample]["input_str_len"] = input_str_lens[sample]
+            self.dataset[self.limit_start + sample]["input_str_len"] = input_str_lens[
+                sample
+            ]
             # self.dataset[self.limit_start + sample]["input_str_len"]= len(input_str)
             for _ in range(self.n_copies):
                 yield {
@@ -289,13 +305,15 @@ def _parse_instruction(code, instruction_tokens):
     idx = code.find(assistant_token)
     shift = len(assistant_token)
     if idx == -1:
-        warnings.warn("The assistant token was not detected in the generation, this might disrupt the post-processing and lead to lower evaluation scores")
+        warnings.warn(
+            "The assistant token was not detected in the generation, this might disrupt the post-processing and lead to lower evaluation scores"
+        )
         return code
 
     if "```python" in assistant_token:
         idx = code.find("```python", idx)
         shift = len("```python")
-    return code[idx + shift:]
+    return code[idx + shift :]
 
 
 def complete_code(
@@ -321,8 +339,10 @@ def complete_code(
 
     gen_token_dict = defaultdict(list)  # dict of list of generated tokens
     for step, batch in tqdm(
-            enumerate(dataloader),
-            total=math.ceil(n_tasks * dataloader.dataset.n_copies / accelerator.num_processes),
+        enumerate(dataloader),
+        total=math.ceil(
+            n_tasks * dataloader.dataset.n_copies / accelerator.num_processes
+        ),
     ):
         with torch.no_grad():
             if task.stop_words:
@@ -333,9 +353,15 @@ def complete_code(
                 gen_kwargs["stopping_criteria"][0].start_length = max_len
             if hasattr(task, "max_length_multiplier") and task.max_length_multiplier:
                 idx = 1 if task.stop_words else 0
-                gen_kwargs["stopping_criteria"][idx].input_length = batch["input_len"].max().item()
+                gen_kwargs["stopping_criteria"][idx].input_length = (
+                    batch["input_len"].max().item()
+                )
 
-            inputs = batch["ids"][:, :batch["input_len"]] if tokenizer.padding_side == "right" else batch["ids"]
+            inputs = (
+                batch["ids"][:, : batch["input_len"]]
+                if tokenizer.padding_side == "right"
+                else batch["ids"]
+            )
 
             copied_kwargs = gen_kwargs.copy()
             target_beam = copied_kwargs.pop("num_beams")
@@ -358,7 +384,11 @@ def complete_code(
                             **copied_kwargs,
                         )
                         # print(f"[{accelerator.process_index}] Try {trying_num_beams} success!")
-                    padded_tokens = generated_tokens[-1].unsqueeze(0).repeat_interleave(target_beam - trying_num_beams, dim=0)
+                    padded_tokens = (
+                        generated_tokens[-1]
+                        .unsqueeze(0)
+                        .repeat_interleave(target_beam - trying_num_beams, dim=0)
+                    )
                     generated_tokens = torch.cat((generated_tokens, padded_tokens))
                     break
                 except RuntimeError as e:
@@ -374,10 +404,14 @@ def complete_code(
 
             # each task is generated batch_size times
             generated_tasks = batch["task_id"].repeat(batch_size)
-            generated_tokens = accelerator.pad_across_processes(generated_tokens, dim=1, pad_index=tokenizer.pad_token_id)
+            generated_tokens = accelerator.pad_across_processes(
+                generated_tokens, dim=1, pad_index=tokenizer.pad_token_id
+            )
 
             # print(f"[{accelerator.process_index}] Before: {generated_tokens.size()}")
-            generated_tokens, generated_tasks = accelerator.gather((generated_tokens, generated_tasks))
+            generated_tokens, generated_tasks = accelerator.gather(
+                (generated_tokens, generated_tasks)
+            )
             # print(f"[{accelerator.process_index}] After: {generated_tokens.size()}")
             generated_tokens = generated_tokens.cpu().numpy()
             generated_tasks = generated_tasks.cpu().numpy()
@@ -395,12 +429,14 @@ def complete_code(
                 # If it's removed it may have the effect of removing it in the middle of a
                 # longer generation in case a batch size > 1 is used, which will result in
                 # a wrong generation as it won't be used for splitting lateron
-                gen_code = tokenizer.decode(s, skip_special_tokens=False, clean_up_tokenization_spaces=False)
+                gen_code = tokenizer.decode(
+                    s, skip_special_tokens=False, clean_up_tokenization_spaces=False
+                )
                 try:
                     # some tokenizers add a multi-token prefix to the generation (e.g ChatGLM)
                     tokenizer_prefix = tokenizer.decode(tokenizer.get_prefix_tokens())
                     if gen_code.startswith(f"{tokenizer_prefix}"):
-                        gen_code = gen_code[len(tokenizer_prefix):].lstrip()
+                        gen_code = gen_code[len(tokenizer_prefix) :].lstrip()
                 except:
                     pass
                 if INFILL_MODE:
@@ -408,13 +444,19 @@ def complete_code(
                 if INSTRUCTION_MODE:
                     gen_code = _parse_instruction(gen_code, instruction_tokens)
             else:
-                gen_code = tokenizer.decode(s, skip_special_tokens=True, clean_up_tokenization_spaces=True)
+                gen_code = tokenizer.decode(
+                    s, skip_special_tokens=True, clean_up_tokenization_spaces=True
+                )
             if not INFILL_MODE:
-                gen_code = gen_code[len(prefix):]
+                gen_code = gen_code[len(prefix) :]
             if postprocess:
-                code_gens[sample].append(task.postprocess_generation(gen_code, int(sample) + limit_start))
+                code_gens[sample].append(
+                    task.postprocess_generation(gen_code, int(sample) + limit_start)
+                )
             else:
-                warnings.warn("model output is not postprocessed, this might lower evaluation scores")
+                warnings.warn(
+                    "model output is not postprocessed, this might lower evaluation scores"
+                )
                 code_gens[sample].append(gen_code)
 
     return code_gens
@@ -434,7 +476,11 @@ def remove_after_return(code):
     for match in re.finditer(pattern, code):
         start_match, end_match = match.span()
         # Search for the first line which does not start by a space character
-        if end_last_match is not None and start_match < len(code) and code[start_match].strip() != "":
+        if (
+            end_last_match is not None
+            and start_match < len(code)
+            and code[start_match].strip() != ""
+        ):
             return code[0:start_match]
         end_last_match = end_match
     return code

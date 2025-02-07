@@ -69,12 +69,21 @@ class HumanEval:
         return metric
 
     def eval_model(self, llm: LLM, lang_name: str):
-        assert self.log_dir is not None, "log_dir should not be None when evaluating humaneval"
-        dataset = HumanEvalDataset(self.data_root, sample_num=self.n_sample, language=lang_name, issft=self.sft)
+        assert (
+            self.log_dir is not None
+        ), "log_dir should not be None when evaluating humaneval"
+        dataset = HumanEvalDataset(
+            self.data_root, sample_num=self.n_sample, language=lang_name, issft=self.sft
+        )
         if self.k > 1:
             assert self.n_sample >= 100, "HumanEval PASS@100 needs n_sample >= 100"
 
-        sampling_params = SamplingParams(max_tokens=self.max_gen_len, temperature=self.temperature, top_p=self.top_p, stop=self.eos)
+        sampling_params = SamplingParams(
+            max_tokens=self.max_gen_len,
+            temperature=self.temperature,
+            top_p=self.top_p,
+            stop=self.eos,
+        )
 
         # Generate.
         with Path(self.log_file_path(lang_name)).open("w") as f_log:
@@ -86,7 +95,10 @@ class HumanEval:
 
             if self.no_batching:
                 print(f"Disable: continuous batching. This will be slow.")
-                generated = [llm.generate(prompt, sampling_params, use_tqdm=False)[0] for prompt in tqdm(prompts)]
+                generated = [
+                    llm.generate(prompt, sampling_params, use_tqdm=False)[0]
+                    for prompt in tqdm(prompts)
+                ]
             else:
                 print(f"Enable: continuous batching.")
                 generated = llm.generate(prompts, sampling_params, use_tqdm=True)
@@ -96,7 +108,13 @@ class HumanEval:
                 # suffixprediction = output.outputs[0].text.replace("\t", "    ")
                 suffixprediction = output.outputs[0].text
                 prediction = output.prompt + suffixprediction
-                suffixprediction = cleanup_code(suffixprediction, lang_name, "humaneval", self.sft, dataset.stopwords)
+                suffixprediction = cleanup_code(
+                    suffixprediction,
+                    lang_name,
+                    "humaneval",
+                    self.sft,
+                    dataset.stopwords,
+                )
                 original_prompt = data["original_prompt"]
                 if not self.sft:
                     suffixprediction = original_prompt + "\n" + suffixprediction

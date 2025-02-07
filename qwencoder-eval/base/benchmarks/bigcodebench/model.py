@@ -3,6 +3,7 @@ import os
 from abc import ABC, abstractmethod
 from typing import List
 from warnings import warn
+
 import torch
 from transformers import AutoModelForCausalLM, AutoTokenizer
 from vllm import LLM, SamplingParams
@@ -53,9 +54,7 @@ Below is a Python script with a self-contained function that solves the problem 
             {"role": "assistant", "content": response},
         ],
         tokenize=False,
-    ).split(
-        _MAGIC_SPLITTER_
-    )[0]
+    ).split(_MAGIC_SPLITTER_)[0]
     return prompt
 
 
@@ -87,7 +86,9 @@ class DecoderBase(ABC):
         self.chat_mode = chat_mode
 
     @abstractmethod
-    def codegen(self, prompt: str, do_sample: bool = True, num_samples: int = 200) -> List[str]:
+    def codegen(
+        self, prompt: str, do_sample: bool = True, num_samples: int = 200
+    ) -> List[str]:
         pass
 
     @abstractmethod
@@ -117,7 +118,9 @@ class VllmDecoder(DecoderBase):
         if self.tokenizer_name is None:
             self.tokenizer_name = self.name
 
-        self.tokenizer = AutoTokenizer.from_pretrained(self.tokenizer_name, **kwargs, legacy=self.tokenizer_legacy)
+        self.tokenizer = AutoTokenizer.from_pretrained(
+            self.tokenizer_name, **kwargs, legacy=self.tokenizer_legacy
+        )
         if not self.chat_mode:
             self.eos += extra_eos_for_direct_completion(dataset)
         self.llm = LLM(model=name, max_model_len=2048, **kwargs)
@@ -126,7 +129,9 @@ class VllmDecoder(DecoderBase):
     def is_direct_completion(self) -> bool:
         return not self.chat_mode
 
-    def codegen(self, prompts: List[str], do_sample: bool = True, num_samples: int = 200) -> List[str]:
+    def codegen(
+        self, prompts: List[str], do_sample: bool = True, num_samples: int = 200
+    ) -> List[str]:
         if do_sample:
             assert self.temperature > 0, "Temperature must be greater than 0!"
 
@@ -152,7 +157,9 @@ class GeneralVllmDecoder(VllmDecoder):
         self.eos += ["\n```\n", "```"]
         print(f"EOS strings: {self.eos}")
 
-    def codegen(self, prompts: List[str], do_sample: bool = True, num_samples: int = 200) -> List[str]:
+    def codegen(
+        self, prompts: List[str], do_sample: bool = True, num_samples: int = 200
+    ) -> List[str]:
         chat_prompts = [
             make_chat_prompt(
                 prompt,
@@ -181,7 +188,9 @@ class HfTorchDecoder(DecoderBase):
         if self.tokenizer_name is None:
             self.tokenizer_name = self.name
 
-        self.tokenizer = AutoTokenizer.from_pretrained(self.tokenizer_name, **kwargs, legacy=self.tokenizer_legacy)
+        self.tokenizer = AutoTokenizer.from_pretrained(
+            self.tokenizer_name, **kwargs, legacy=self.tokenizer_legacy
+        )
 
         if not self.chat_mode:
             self.eos += extra_eos_for_direct_completion(dataset)
@@ -193,12 +202,16 @@ class HfTorchDecoder(DecoderBase):
         return not self.chat_mode
 
     @torch.inference_mode()
-    def codegen(self, prompt: str, do_sample: bool = True, num_samples: int = 200) -> List[str]:
+    def codegen(
+        self, prompt: str, do_sample: bool = True, num_samples: int = 200
+    ) -> List[str]:
         if self.temperature == 0:
             assert not do_sample
             assert num_samples == 1
 
-        input_tokens = self.tokenizer.encode(prompt, return_tensors="pt").to(self.device)
+        input_tokens = self.tokenizer.encode(prompt, return_tensors="pt").to(
+            self.device
+        )
         kwargs = {}
         if do_sample:
             kwargs["top_p"] = 0.95
@@ -237,10 +250,14 @@ class GenenralHfTorchDecoder(HfTorchDecoder):
         self.eos += ["\n```\n", "```"]
         print(f"EOS strings: {self.eos}")
         self.tokenizer = AutoTokenizer.from_pretrained(
-            self.tokenizer_name if self.tokenizer_name else self.name, **kwargs, legacy=self.tokenizer_legacy
+            self.tokenizer_name if self.tokenizer_name else self.name,
+            **kwargs,
+            legacy=self.tokenizer_legacy,
         )
 
-    def codegen(self, prompt: str, do_sample: bool = True, num_samples: int = 200) -> List[str]:
+    def codegen(
+        self, prompt: str, do_sample: bool = True, num_samples: int = 200
+    ) -> List[str]:
         prompt = make_chat_prompt(prompt, self.tokenizer, self.chat_mode)
         return HfTorchDecoder.codegen(self, prompt, do_sample, num_samples)
 

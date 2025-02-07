@@ -6,9 +6,8 @@
 import ast
 import traceback
 
-from termcolor import colored
-
 from data import load_solutions
+from termcolor import colored
 
 
 def syntax_check(code, verbose=False):
@@ -21,9 +20,7 @@ def syntax_check(code, verbose=False):
         return False
 
 
-def script(
-    samples: str, nsample_check: int = None, verbose: bool = False
-):
+def script(samples: str, nsample_check: int = None, verbose: bool = False):
     # List[Dict{"task_id", "solution"}]
     solutions = load_solutions(samples)
 
@@ -41,7 +38,9 @@ def script(
             id2solutions[task_id] = []
         if "solution" not in solution:
             assert "completion" in solution, "solution or completion must exist!"
-            solution["solution"] = dataset[task_id]["complete_prompt"] + solution["completion"]
+            solution["solution"] = (
+                dataset[task_id]["complete_prompt"] + solution["completion"]
+            )
         id2solutions[task_id].append(solution)
 
     print(colored("==============================", "blue"))

@@ -35,7 +35,13 @@ class ConfirmGroup:
 
 class AutoCompleter(Completer):
     def __init__(
-        self, root, rel_fnames, addable_rel_fnames, commands, encoding, abs_read_only_fnames=None
+        self,
+        root,
+        rel_fnames,
+        addable_rel_fnames,
+        commands,
+        encoding,
+        abs_read_only_fnames=None,
     ):
         self.addable_rel_fnames = addable_rel_fnames
         self.rel_fnames = rel_fnames
@@ -87,7 +93,9 @@ class AutoCompleter(Completer):
 
             tokens = list(lexer.get_tokens(content))
             self.words.update(
-                (token[1], f"`{token[1]}`") for token in tokens if token[0] in Token.Name
+                (token[1], f"`{token[1]}`")
+                for token in tokens
+                if token[0] in Token.Name
             )
 
     def get_command_completions(self, text, words):
@@ -144,7 +152,9 @@ class AutoCompleter(Completer):
 
         candidates = self.words
         candidates.update(set(self.fname_to_rel_fnames))
-        candidates = [word if type(word) is tuple else (word, word) for word in candidates]
+        candidates = [
+            word if type(word) is tuple else (word, word) for word in candidates
+        ]
 
         last_word = words[-1]
         completions = []
@@ -269,7 +279,9 @@ class InputOutput:
 
     def rule(self):
         if self.pretty:
-            style = dict(style=self.user_input_color) if self.user_input_color else dict()
+            style = (
+                dict(style=self.user_input_color) if self.user_input_color else dict()
+            )
             self.console.rule(**style)
         else:
             print()
@@ -415,7 +427,12 @@ class InputOutput:
         self.append_chat_history(hist)
 
     def confirm_ask(
-        self, question, default="y", subject=None, explicit_yes_required=False, group=None
+        self,
+        question,
+        default="y",
+        subject=None,
+        explicit_yes_required=False,
+        group=None,
     ):
         self.num_user_asks += 1
 
@@ -470,11 +487,15 @@ class InputOutput:
                     res = "y"  # Default to Yes if no input
                     break
                 res = res.lower()
-                good = any(valid_response.startswith(res) for valid_response in valid_responses)
+                good = any(
+                    valid_response.startswith(res) for valid_response in valid_responses
+                )
                 if good:
                     break
 
-                error_message = f"Please answer with one of: {', '.join(valid_responses)}"
+                error_message = (
+                    f"Please answer with one of: {', '.join(valid_responses)}"
+                )
                 self.tool_error(error_message)
 
         res = res.lower()[0]
@@ -528,7 +549,9 @@ class InputOutput:
         if message.strip():
             if "\n" in message:
                 for line in message.splitlines():
-                    self.append_chat_history(line, linebreak=True, blockquote=True, strip=strip)
+                    self.append_chat_history(
+                        line, linebreak=True, blockquote=True, strip=strip
+                    )
             else:
                 hist = message.strip() if strip else message
                 self.append_chat_history(hist, linebreak=True, blockquote=True)

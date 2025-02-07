@@ -1,18 +1,19 @@
 import json
-import torch
-import random
-import os
-
-from jsonlines import jsonlines
-from torch.utils.data import IterableDataset, Dataset
-from typing import Dict, Optional, Sequence
-import transformers
 import logging
-import numpy as np
-import tqdm
+import os
+import random
+from typing import Dict, Optional, Sequence
 
+import numpy as np
+import torch
+import tqdm
+import transformers
 import utils
+from jsonlines import jsonlines
+from torch.utils.data import Dataset, IterableDataset
+
 logging.basicConfig(level=logging.DEBUG)
+
 
 def read_jsonl_file(file_name, max_sentence=None):
     data = []
@@ -23,10 +24,13 @@ def read_jsonl_file(file_name, max_sentence=None):
             data.append(obj)
     return data
 
+
 class SupervisedDataset(Dataset):
     """Dataset for supervised fine-tuning."""
 
-    def __init__(self, data_path: str, tokenizer: transformers.PreTrainedTokenizer, args):
+    def __init__(
+        self, data_path: str, tokenizer: transformers.PreTrainedTokenizer, args
+    ):
         super(SupervisedDataset, self).__init__()
         logging.warning("Loading data...")
         if data_path.endswith(".npy"):
@@ -35,27 +39,48 @@ class SupervisedDataset(Dataset):
             self.input_ids = read_jsonl_file(data_path)
         original_data_num = len(self.input_ids)
         logging.info("Completely Loading tokenized sentences...")
+
         def truncate(sentence):
-            return torch.tensor(sentence[:args.model_max_length] + [tokenizer.eos_token_id] if len(sentence) > args.model_max_length else sentence, dtype=torch.long)
+            return torch.tensor(
+                (
+                    sentence[: args.model_max_length] + [tokenizer.eos_token_id]
+                    if len(sentence) > args.model_max_length
+                    else sentence
+                ),
+                dtype=torch.long,
+            )
+
         if args.truncate_source:
             self.labels = [truncate(example["label"]) for example in self.input_ids]
-            self.input_ids = [truncate(example["input_ids"]) for example in self.input_ids]
+            self.input_ids = [
+                truncate(example["input_ids"]) for example in self.input_ids
+            ]
         else:
-            self.labels = [torch.tensor(example["label"], dtype=torch.long) for example in self.input_ids if len(example["input_ids"]) < args.model_max_length]
-            self.input_ids = [torch.tensor(example["input_ids"], dtype=torch.long) for example in self.input_ids if len(example["input_ids"]) < args.model_max_length]
+            self.labels = [
+                torch.tensor(example["label"], dtype=torch.long)
+                for example in self.input_ids
+                if len(example["input_ids"]) < args.model_max_length
+            ]
+            self.input_ids = [
+                torch.tensor(example["input_ids"], dtype=torch.long)
+                for example in self.input_ids
+                if len(example["input_ids"]) < args.model_max_length
+            ]
         print(f"Samples: {original_data_num} -> {len(self.input_ids)}")
-
 
     def __len__(self):
         return len(self.input_ids)
 
-    def __getitem__(self, i) -> Dict[str, torch.Tensor]:        
+    def __getitem__(self, i) -> Dict[str, torch.Tensor]:
         return dict(input_ids=self.input_ids[i], labels=self.labels[i])
 
 
 class MMAPSupervisedDataset(Dataset):
     """Dataset for supervised fine-tuning."""
-    def __init__(self, data_path: str, tokenizer: transformers.PreTrainedTokenizer, args):
+
+    def __init__(
+        self, data_path: str, tokenizer: transformers.PreTrainedTokenizer, args
+    ):
         super(Dataset, self).__init__()
         logging.warning("Loading data...")
         input_ids_path = data_path
@@ -66,45 +91,46 @@ class MMAPSupervisedDataset(Dataset):
         lengths_shape_path = lengths_path + ".shape.json"
         self.model_max_length = args.model_max_length
         self.truncate_source = args.truncate_source
-        with open(input_ids_shape_path, 'r') as f:
+        with open(input_ids_shape_path, "r") as f:
             input_ids_shape_info = json.load(f)
-        with open(labels_shape_path, 'r') as f:
+        with open(labels_shape_path, "r") as f:
             labels_shape_info = json.load(f)
-        with open(lengths_shape_path, 'r') as f:
+        with open(lengths_shape_path, "r") as f:
             lengths_shape_info = json.load(f)
         self.input_ids = np.memmap(
             input_ids_path,
             dtype=np.int32,
-            mode='r',
-            shape=(input_ids_shape_info['n_samples'], input_ids_shape_info['max_len'])
+            mode="r",
+            shape=(input_ids_shape_info["n_samples"], input_ids_shape_info["max_len"]),
         )
         self.labels = np.memmap(
-            labels_path, 
+            labels_path,
             dtype=np.int32,
-            mode='r',
-            shape=(labels_shape_info['n_samples'], labels_shape_info['max_len'])
+            mode="r",
+            shape=(labels_shape_info["n_samples"], labels_shape_info["max_len"]),
         )
         self.lengths = np.memmap(
-            lengths_path, 
+            lengths_path,
             dtype=np.int32,
-            mode='r',
-            shape=(lengths_shape_info['n_samples'], lengths_shape_info['max_len'])
+            mode="r",
+            shape=(lengths_shape_info["n_samples"], lengths_shape_info["max_len"]),
         )
         logging.info(f"Loaded {len(self.input_ids)} samples using mmap")
 
     def __len__(self):
         return len(self.input_ids)
 
-    def __getitem__(self, i) -> Dict[str, torch.Tensor]:     
+    def __getitem__(self, i) -> Dict[str, torch.Tensor]:
         length = int(self.lengths[i])
         input_ids = self.input_ids[i][:length]
         labels = self.labels[i][:length]
         input_ids = torch.tensor(input_ids, dtype=torch.long)
         labels = torch.tensor(labels, dtype=torch.long)
         if self.truncate_source:
-            input_ids = input_ids[:self.model_max_length]
-            labels = labels[:self.model_max_length]
+            input_ids = input_ids[: self.model_max_length]
+            labels = labels[: self.model_max_length]
         return dict(input_ids=input_ids, labels=labels)
+
 
 class BufferedJsonlDataset(IterableDataset):
     def __init__(
@@ -112,7 +138,7 @@ class BufferedJsonlDataset(IterableDataset):
         data_path: str,
         buffer_size: int = 1000,  # 缓冲区大小
         seed: Optional[int] = None,
-        shuffle: bool = True
+        shuffle: bool = True,
     ):
         super().__init__()
         self.data_path = data_path
@@ -121,7 +147,6 @@ class BufferedJsonlDataset(IterableDataset):
         self.seed = seed
         self.file_size = os.path.getsize(data_path)
         logging.info(f"Reading from {data_path}: {len(self.file_size)}")
-    
 
     def __iter__(self):
         worker_info = torch.utils.data.get_worker_info()
@@ -130,9 +155,9 @@ class BufferedJsonlDataset(IterableDataset):
             if worker_info is not None:
                 random_seed += worker_info.id
             np.random.seed(random_seed)
-        start_pos = np.random.randint(0, self.file_size) if self.shuffle else 0      
+        start_pos = np.random.randint(0, self.file_size) if self.shuffle else 0
         buffer = []
-        with open(self.data_path, 'r', encoding='utf-8') as f:
+        with open(self.data_path, "r", encoding="utf-8") as f:
             while True:
                 if not buffer:
                     f.seek(start_pos)
@@ -143,7 +168,7 @@ class BufferedJsonlDataset(IterableDataset):
                     buffer = []
                     for _ in range(self.buffer_size):
                         line = f.readline()
-                        if not line:  
+                        if not line:
                             f.seek(0)
                             line = f.readline()
                         try:
@@ -163,6 +188,7 @@ class BufferedJsonlDataset(IterableDataset):
     def __len__(self):
         return self.file_size
 
+
 class JSONLDataset(IterableDataset):
     def __init__(self, data_path, buffer_size=1000):
         """
@@ -174,14 +200,14 @@ class JSONLDataset(IterableDataset):
         self.data_path = data_path
         self.buffer_size = buffer_size
         self.file_size = os.path.getsize(data_path)
-    
+
     def get_random_start_pos(self, mm):
         """获取随机起始位置"""
         # 随机选择一个文件位置
         pos = random.randint(0, self.file_size - 1)
-        
+
         # 调整到最近的行首
-        while pos > 0 and mm[pos-1] != ord('\n'):
+        while pos > 0 and mm[pos - 1] != ord("\n"):
             pos -= 1
         return pos
 
@@ -189,30 +215,30 @@ class JSONLDataset(IterableDataset):
         """从指定位置读取数据"""
         buffer = []
         current_pos = start_pos
-        
+
         while len(buffer) < self.buffer_size and current_pos < self.file_size:
             line_start = current_pos
-            
+
             # 找到行尾
-            while current_pos < self.file_size and mm[current_pos] != ord('\n'):
+            while current_pos < self.file_size and mm[current_pos] != ord("\n"):
                 current_pos += 1
-            
+
             if current_pos < self.file_size:
-                line = mm[line_start:current_pos].decode('utf-8')
+                line = mm[line_start:current_pos].decode("utf-8")
                 try:
                     data = json.loads(line)
                     if "input_ids" in data:
                         buffer.append(data["input_ids"])
                 except json.JSONDecodeError:
                     pass  # 跳过无效的JSON行
-                
+
                 current_pos += 1  # 跳过换行符
-        
+
         return buffer, current_pos
 
     def __iter__(self):
         worker_info = torch.utils.data.get_worker_info()
-        with open(self.data_path, 'rb') as f:
+        with open(self.data_path, "rb") as f:
             mm = mmap.mmap(f.fileno(), 0, access=mmap.ACCESS_READ)
             if worker_info is not None:
                 start_pos = self.get_random_start_pos(mm)
@@ -230,7 +256,7 @@ class JSONLDataset(IterableDataset):
                 random.shuffle(buffer)
                 for item in buffer:
                     yield torch.tensor(item)
-                
+
                 current_pos = next_pos
 
     def __len__(self):
@@ -239,17 +265,10 @@ class JSONLDataset(IterableDataset):
 
 if __name__ == "__main__":
     from torch.utils.data import DataLoader
+
     dataset = BufferedJsonlDataset(
-        data_path="path/to/your/large.jsonl",
-        buffer_size=1000,
-        seed=42,
-        shuffle=True
+        data_path="path/to/your/large.jsonl", buffer_size=1000, seed=42, shuffle=True
     )
-    dataloader = DataLoader(
-        dataset,
-        batch_size=32,
-        num_workers=4, 
-        pin_memory=True 
-    )
+    dataloader = DataLoader(dataset, batch_size=32, num_workers=4, pin_memory=True)
     for batch in dataloader:
         pass

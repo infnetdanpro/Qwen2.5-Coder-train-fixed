@@ -7,12 +7,11 @@ import sys
 from collections import defaultdict
 from pathlib import Path
 
+from comparator import quick_rej, result_eq
 from func_timeout import FunctionTimedOut, func_timeout
 from rich.console import Console
 from rich.table import Table
 from tqdm.contrib.concurrent import process_map
-
-from comparator import quick_rej, result_eq
 from utils import read_packed_sql
 
 
@@ -59,7 +58,9 @@ def execute_model(packed):
     status = "failed"
     detail = None
     try:
-        res = func_timeout(exec_time_out, execute_sql, args=(db_file, gen_sql, gold_sql, mode))
+        res = func_timeout(
+            exec_time_out, execute_sql, args=(db_file, gen_sql, gold_sql, mode)
+        )
         status = "success"
     except FunctionTimedOut:
         status = "timeout"
@@ -125,7 +126,9 @@ def print_scores(acc_score, exec_score, num_dict):
 
     table = Table(show_footer=True)
     table.add_column("Part", footer="All", justify="right")
-    table.add_column("Executable", footer=to_percent(exec_score["all"]), justify="right")
+    table.add_column(
+        "Executable", footer=to_percent(exec_score["all"]), justify="right"
+    )
     table.add_column("Accuracy", footer=to_percent(acc_score["all"]), justify="right")
 
     # for level in ["simple", "moderate", "challenging"]:
@@ -140,7 +143,9 @@ if __name__ == "__main__":
     args_parser.add_argument("--db_root", type=str, required=True, default="")
     args_parser.add_argument("--num_workers", type=int, default=1)
     args_parser.add_argument("--exec_time_out", type=float, default=30.0)
-    args_parser.add_argument("--mode", type=str, required=True, choices=["bird", "spider"])
+    args_parser.add_argument(
+        "--mode", type=str, required=True, choices=["bird", "spider"]
+    )
     args_parser.add_argument("--save_to", type=str, default=None)
     args_parser.add_argument("--debug", default=False, action="store_true")
     args = args_parser.parse_args()
@@ -163,7 +168,12 @@ if __name__ == "__main__":
 
     acc_score, exec_score, num_dict, error_counter = compute_score(exec_result)
     print_scores(acc_score, exec_score, num_dict)
-    metric_dict = {"acc": acc_score, "exec": exec_score, "nums": num_dict, "error_counter": error_counter}
+    metric_dict = {
+        "acc": acc_score,
+        "exec": exec_score,
+        "nums": num_dict,
+        "error_counter": error_counter,
+    }
 
     if args.save_to is not None:
         file_to_save = Path(args.save_to)

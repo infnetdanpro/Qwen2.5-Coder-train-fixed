@@ -1,5 +1,4 @@
 import pytest  # noqa: F401
-
 from aider.run_cmd import run_cmd
 
 

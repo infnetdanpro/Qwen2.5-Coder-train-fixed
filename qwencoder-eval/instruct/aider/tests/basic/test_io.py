@@ -19,7 +19,9 @@ class TestInputOutput(unittest.TestCase):
         rel_fnames = ["non_existent_file.txt"]
         addable_rel_fnames = []
         commands = None
-        autocompleter = AutoCompleter(root, rel_fnames, addable_rel_fnames, commands, "utf-8")
+        autocompleter = AutoCompleter(
+            root, rel_fnames, addable_rel_fnames, commands, "utf-8"
+        )
         self.assertEqual(autocompleter.words, set(rel_fnames))
 
     def test_autocompleter_with_unicode_file(self):
@@ -29,21 +31,31 @@ class TestInputOutput(unittest.TestCase):
             rel_fnames = [fname]
             addable_rel_fnames = []
             commands = None
-            autocompleter = AutoCompleter(root, rel_fnames, addable_rel_fnames, commands, "utf-8")
+            autocompleter = AutoCompleter(
+                root, rel_fnames, addable_rel_fnames, commands, "utf-8"
+            )
             self.assertEqual(autocompleter.words, set(rel_fnames))
 
             Path(fname).write_text("def hello(): pass\n")
-            autocompleter = AutoCompleter(root, rel_fnames, addable_rel_fnames, commands, "utf-8")
+            autocompleter = AutoCompleter(
+                root, rel_fnames, addable_rel_fnames, commands, "utf-8"
+            )
             autocompleter.tokenize()
             dump(autocompleter.words)
-            self.assertEqual(autocompleter.words, set(rel_fnames + [("hello", "`hello`")]))
+            self.assertEqual(
+                autocompleter.words, set(rel_fnames + [("hello", "`hello`")])
+            )
 
             encoding = "utf-16"
-            some_content_which_will_error_if_read_with_encoding_utf8 = "ÅÍÎÏ".encode(encoding)
+            some_content_which_will_error_if_read_with_encoding_utf8 = "ÅÍÎÏ".encode(
+                encoding
+            )
             with open(fname, "wb") as f:
                 f.write(some_content_which_will_error_if_read_with_encoding_utf8)
 
-            autocompleter = AutoCompleter(root, rel_fnames, addable_rel_fnames, commands, "utf-8")
+            autocompleter = AutoCompleter(
+                root, rel_fnames, addable_rel_fnames, commands, "utf-8"
+            )
             self.assertEqual(autocompleter.words, set(rel_fnames))
 
     @patch("aider.io.PromptSession")
@@ -130,7 +142,9 @@ class TestInputOutput(unittest.TestCase):
         # Test case 5: explicit_yes_required=True, should not offer 'All' option
         group.preference = None
         mock_prompt.return_value = "y"
-        result = io.confirm_ask("Are you sure?", group=group, explicit_yes_required=True)
+        result = io.confirm_ask(
+            "Are you sure?", group=group, explicit_yes_required=True
+        )
         self.assertTrue(result)
         self.assertIsNone(group.preference)
         mock_prompt.assert_called_once()
@@ -171,7 +185,9 @@ class TestInputOutput(unittest.TestCase):
         commands.get_completions.return_value = ["gpt-3.5-turbo", "gpt-4"]
         commands.matching_commands.return_value = (["/model", "/models"], None, None)
 
-        autocompleter = AutoCompleter(root, rel_fnames, addable_rel_fnames, commands, "utf-8")
+        autocompleter = AutoCompleter(
+            root, rel_fnames, addable_rel_fnames, commands, "utf-8"
+        )
 
         # Test case for "/model gpt"
         result = autocompleter.get_command_completions("/model gpt", ["/model", "gpt"])

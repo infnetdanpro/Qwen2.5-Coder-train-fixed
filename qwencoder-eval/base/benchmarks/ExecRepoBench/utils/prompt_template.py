@@ -14,32 +14,32 @@ REPO_COMPLETE_TEMPLATE = """
 ##Middle Code##:
 """
 
-CODEQWEN_BASE_TEMPLATE="""
+CODEQWEN_BASE_TEMPLATE = """
 {}<fim_prefix>{}<fim_suffix>{}<fim_middle>
 """
 
-QWEN_CODER_TEMPLAT="""
+QWEN_CODER_TEMPLAT = """
 {}<|fim_prefix|>{}<|fim_suffix|>{}<|fim_middle|>
 """
 
-STARCODER_BASE_TEMPLATE= """
+STARCODER_BASE_TEMPLATE = """
 {}<fim_prefix>{}<fim_suffix>{}<fim_middle>
 """
 
 
-STARCODER2_BASE_TEMPLATE= """
+STARCODER2_BASE_TEMPLATE = """
 {}<fim_prefix>{}<fim_suffix>{}<fim_middle>
 """
 
 
-DEEPSEEK_CODER_BASE_TEMPLATE= """
+DEEPSEEK_CODER_BASE_TEMPLATE = """
 {}<｜fim▁begin｜>{}<｜fim▁hole｜>{}<｜fim▁end｜>
 """
 
-CODESTRAL_TEMPLATE= """
+CODESTRAL_TEMPLATE = """
 {}[PREFIX]{}[SUFFIX]{}[MIDDLE]
 """
 
-CODELLAMA_TEMPLATE= """
+CODELLAMA_TEMPLATE = """
 {}<PRE> {pre} <SUF>{suf} <MID>
 """

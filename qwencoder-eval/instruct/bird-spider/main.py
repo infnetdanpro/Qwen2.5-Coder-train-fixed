@@ -3,11 +3,10 @@ import json
 
 import datasets
 import transformers
-from transformers import HfArgumentParser
-
 from code_eval.arguments import EvalArguments
 from code_eval.evaluator import Evaluator
 from code_eval.tasks import ALL_TASKS
+from transformers import HfArgumentParser
 
 
 class MultiChoice:
